@@ -1,0 +1,27 @@
+adapter: nvidia lovelace nvidia-geforce-rtx-4070-super subgroup 32-32
+features: texture-component-swizzle,primitive-index,texture-formats-tier2,texture-formats-tier1,subgroups,core-features-and-limits,float32-filterable,depth-clip-control,float32-blendable,depth32float-stencil8,clip-distances,texture-compression-bc,dual-source-blending,texture-compression-bc-sliced-3d,timestamp-query,indirect-first-instance,rg11b10ufloat-renderable,bgra8unorm-storage
+[1] default device limits: {"maxBufferSize":268435456,"maxStorageBufferBindingSize":134217728,"maxStorageBuffersPerShaderStage":8,"maxComputeWorkgroupStorageSize":16384,"maxComputeInvocationsPerWorkgroup":256,"maxComputeWorkgroupsPerDimension":65535,"minStorageBufferOffsetAlignment":256,"minUniformBufferOffsetAlignment":256,"maxDynamicStorageBuffersPerPipelineLayout":4,"maxDynamicUniformBuffersPerPipelineLayout":8}
+[1b] second requestDevice on the same adapter throws 'adapter is consumed' (seen); fresh adapter: lovelace
+[2a override WG=256,USE_PERM=0,HAS_WEIGHTS=0] compile errors: none; pipeline: ok; scope: none
+[2a override WG=256,USE_PERM=0,HAS_WEIGHTS=0] dummy bindings + result: ok; scope: none
+[2b override WG=128,USE_PERM=1] compile errors: none; pipeline: ok; scope: none
+[2b override WG=128,USE_PERM=1] dummy bindings + result: ok; scope: none
+[4 layout storage(rw) vs shader var<storage,read>] compile errors: none; pipeline: FAILED The buffer type in the shader (BufferBindingType::ReadOnlyStorage) is not compatible with the type in the layout (BufferBindingType::Storage).
+ - While validating that the entry-point's declaration for @group(0) @binding(0) matches [BindGroupLayoutInternal (unlabeled)]
+ - While validating the entry-point's compatibility for group 0 with [BindGroupLayoutInternal (unlabeled)]
+ - While validating compute stage ([ShaderModule (unlabeled)], entryPoint: "main").
+; scope: none
+[4b layout read-only vs shader read_write] compile errors: none; pipeline: FAILED The buffer type in the shader (BufferBindingType::Storage) is not compatible with the type in the layout (BufferBindingType::ReadOnlyStorage).
+ - While validating that the entry-point's declaration for @group(0) @binding(4) matches [BindGroupLayoutInternal (unlabeled)]
+ - While validating the entry-point's compatibility for group 0 with [BindGroupLayoutInternal (unlabeled)]
+ - While validating compute stage ([ShaderModule (unlabeled)], entryPoint: "main").
+; scope: none
+[5 subgroups] compile errors: none; pipeline: ok; scope: none
+[5] subgroup_size builtin = 32 (lane 255: 32), subgroupAdd(1) = 32 / 32; adapter.info.subgroupMinSize = 32, MaxSize = 32
+[6 timestamp kernel] compile errors: none; pipeline: ok; scope: none
+[6] timestamp deltas (ns): 26624, 32768, 54272, 61440, 81920, 90112, 109568, 137216; all multiples of 100000? false; multiples of 1000? false
+[7 counter kernel] compile errors: none; pipeline: ok; scope: none
+[8 args writer] compile errors: none; pipeline: ok; scope: none
+[7] indirect x=70000 (> 65535): counter = 0 (spec: 0 = 'does nothing'); scope: none
+[7b] indirect x=65535: counter = 65535
+[8] same-pass write-then-indirect: counter = 7 (expect 7); scope: none

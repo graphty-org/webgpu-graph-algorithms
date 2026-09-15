@@ -1,0 +1,25 @@
+n=2048 G=512 iters=100 edges=10236
+(a) exact tier, no clamp:
+{"it":0,"extent":1.9989,"cellSize":0.00394,"speed":1.5,"eff":1.3,"maxStep":252,"meanStep":194}
+{"it":10,"extent":1054.8235,"cellSize":2.08,"speed":12.122,"eff":4.4804,"maxStep":192,"meanStep":21.5}
+{"it":20,"extent":1963.9866,"cellSize":3.87,"speed":13.13,"eff":9.6431,"maxStep":86.7,"meanStep":11.2}
+{"it":30,"extent":2591.1072,"cellSize":5.11,"speed":7.332,"eff":6.0176,"maxStep":50.2,"meanStep":6.73}
+{"it":40,"extent":3006.7031,"cellSize":5.93,"speed":5.357,"eff":3.7552,"maxStep":69.2,"meanStep":5.05}
+{"it":50,"extent":3348.3195,"cellSize":6.61,"speed":5.699,"eff":4.3519,"maxStep":40.5,"meanStep":4.4}
+{"it":60,"extent":3659.0336,"cellSize":7.22,"speed":4.191,"eff":5.0435,"maxStep":31.8,"meanStep":3.5}
+{"it":70,"extent":3941.1864,"cellSize":7.77,"speed":4.732,"eff":5.845,"maxStep":32.7,"meanStep":3.61}
+{"it":80,"extent":4187.3766,"cellSize":8.26,"speed":3.374,"eff":3.6475,"maxStep":26,"meanStep":2.84}
+{"it":90,"extent":4427.4496,"cellSize":8.73,"speed":2.296,"eff":2.2761,"maxStep":25.8,"meanStep":2.21}
+{"it":99,"extent":4615.8618,"cellSize":9.11,"speed":2.331,"eff":2.0291,"maxStep":16.7,"meanStep":1.98}
+(b) grid tier as written, |dp| <= 2 * cellSize with cellSize = 1.01 * extent / G:
+{"it":0,"extent":1.9989,"cellSize":0.00394,"speed":1.5,"eff":1.3,"maxStep":0.00789,"meanStep":0.00789}
+{"it":10,"extent":2.1599,"cellSize":0.00426,"speed":86.498,"eff":17.9216,"maxStep":0.00852,"meanStep":0.00852}
+{"it":20,"extent":2.3355,"cellSize":0.00461,"speed":4987.885,"eff":112.4554,"maxStep":0.00921,"meanStep":0.00921}
+{"it":30,"extent":2.5254,"cellSize":0.00498,"speed":123515.056,"eff":112.4554,"maxStep":0.00996,"meanStep":0.00996}
+{"it":40,"extent":2.7308,"cellSize":0.00539,"speed":126528.174,"eff":112.4554,"maxStep":0.0108,"meanStep":0.0108}
+{"it":50,"extent":2.9529,"cellSize":0.00583,"speed":128891.987,"eff":112.4554,"maxStep":0.0117,"meanStep":0.0117}
+{"it":60,"extent":3.1932,"cellSize":0.0063,"speed":130745.007,"eff":112.4554,"maxStep":0.0126,"meanStep":0.0126}
+{"it":70,"extent":3.4533,"cellSize":0.00681,"speed":132289.472,"eff":112.4554,"maxStep":0.0136,"meanStep":0.0136}
+{"it":80,"extent":3.7345,"cellSize":0.00737,"speed":133588.37,"eff":112.4554,"maxStep":0.0147,"meanStep":0.0147}
+{"it":90,"extent":4.0385,"cellSize":0.00797,"speed":134694.477,"eff":112.4554,"maxStep":0.0159,"meanStep":0.0159}
+{"it":99,"extent":4.3333,"cellSize":0.00855,"speed":135565.483,"eff":112.4554,"maxStep":0.0171,"meanStep":0.0171}

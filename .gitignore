@@ -1,70 +1,16 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Dependencies
+# Repository-root ignore list (contract 1.1). packages/ carries its own .gitignore for the pnpm workspace.
 node_modules
-.pnp
-.pnp.js
-
-# Build outputs
 dist
-dist-ssr
-*.local
 coverage
-.nyc_output
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-*~
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Test files
-*.test.js
-*.test.d.ts
-*.bench.js
-*.bench.d.ts
-
-# Temporary files
-*.tmp
-*.temp
-.cache
-
-# OS files
-Thumbs.db
-desktop.ini
-
-# Package manager files
-.npm
-.yarn-integrity
-
-# TypeScript
-*.tsbuildinfo
-tsconfig.tsbuildinfo
-
-# Benchmark results
-bench-results/
-# Session scratch, research clones (with their own .git directories) and
-# throwaway scripts; the monorepo ignores the same two directories.
 tmp/
 .tmp/
+*.tsbuildinfo
+# Written with a leading **/ so the package's benchmarks/out/ is covered: a pattern with a slash in the
+# middle is relative to the directory of this file and would match only <root>/benchmarks/out/.
+**/benchmarks/out/
+browser-results.json
+gpu-report.json
+*.log
+# The review probe logs are committed on purpose (contract 1.1: docs/research/review/probes/*.log).
+!packages/webgpu-graph-algorithms/docs/research/review/probes/*.log
+.DS_Store
