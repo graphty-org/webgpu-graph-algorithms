@@ -4673,3 +4673,31 @@ Also added for the owner's verification question of 2026-09-14: 11.9 (sabotage m
 
 Approved by the owner on 2026-09-14. The npm placeholder 0.0.0 was published
 the same day and its directory is the seed of P0's package (Q-28).
+
+Interface contract (2026-09-15, `docs/superpowers/plans/2026-09-14-webgpu-p0-p3-interfaces.md`,
+the normative P0-P3 declarations derived from this plan): four corrections
+it makes to statements above, PENDING the owner's confirmation at the G0
+sign-off of the 7.2 table (D21); until then the contract's reading is what
+P0-P3 implement:
+
+1. 7.2 gravity-centre row and Q-1: NetworkX 3.4.2 `forceatlas2_layout` pulls
+   toward the ORIGIN (`layout.py` lines 1466-1471: `-gravity * mass * pos /
+   |pos|`), not the centroid; `compat: "networkx"` therefore compiles
+   `GRAVITY_CENTER = 1`, and the "centroid (port, NetworkX)" wording is wrong
+   about NetworkX (it is right about the port).
+2. 7.2 "Local speed / apply" row, 7.10 and 7.11: NetworkX's PER-NODE factor
+   uses `swinging = mass * |update|` (`layout.py` line 1497, the force), and
+   only the GLOBAL sums mix positions (`swing += (mass * |pos - update|).sum()`,
+   line 1483). `SWING_MODE = 1` keeps the position-mixed accumulated global
+   sums and uses `m_i |F_i|` in K5's local factor.
+3. 3.5 lines 1032-1033 and D16: "scratch arrays are sized `WG / SUBGROUP_MAX`
+   (rounded up), which is enough for the smallest size the compiler may
+   pick" is inverted -- the subgroup COUNT is `WG / subgroup_size`, largest
+   at the SMALLEST size; scratch is sized by `SUBGROUP_MIN`
+   (`adapter.info.subgroupMinSize`, a second standard override), and
+   `SUBGROUP_MAX` stays declared.
+4. 4.1 lines 1130-1136 versus 6 row 3 / 7.3 / 7.5: 4.1 makes `USE_PERM` the
+   arcToEdge / edgeToArc identity guard, the other three make it the
+   `degreeOrder()` row permutation with `rowPtr` as the dummy. The contract
+   follows the majority (`USE_PERM` / `perm` = the row permutation; the arc
+   guard of P7+ is the reserved `USE_ARC_PERM`).
