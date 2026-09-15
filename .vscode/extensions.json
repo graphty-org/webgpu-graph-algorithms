@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "dbaeumer.vscode-eslint",
+        "vitest.explorer",
+        "ms-vscode.vscode-typescript-next",
+        "yzhang.markdown-all-in-one",
+        "streetsidesoftware.code-spell-checker",
+        "usernamehw.errorlens"
+    ]
+}

@@ -1,0 +1,67 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+      
+      - name: Install system dependencies for WebGPU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libvulkan1 \
+            libvulkan-dev \
+            vulkan-tools \
+            mesa-vulkan-drivers \
+            libgl1-mesa-dri \
+            libgl1-mesa-glx \
+            libglapi-mesa \
+            libegl1-mesa \
+            xvfb
+      
+      - name: Setup display for WebGPU
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run type checking
+        run: npm run typecheck
+      
+      - name: Run tests with WebGPU
+        run: |
+          export DISPLAY=:99
+          npm run test:run
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == '20.x'
+        with:
+          name: coverage
+          path: coverage/

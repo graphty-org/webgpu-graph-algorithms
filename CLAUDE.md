@@ -1,0 +1,1 @@
+- Never create fallbacks if WebGPU isn't supported
