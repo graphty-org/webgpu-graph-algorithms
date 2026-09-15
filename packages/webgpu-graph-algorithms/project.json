@@ -1,0 +1,51 @@
+{
+    "name": "webgpu-graph-algorithms",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "webgpu-graph-algorithms/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "nx:run-commands",
+            "outputs": ["{projectRoot}/dist"],
+            "options": { "command": "npm run build:all", "cwd": "webgpu-graph-algorithms" },
+            "dependsOn": ["^build"]
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run test:run", "cwd": "webgpu-graph-algorithms" }
+        },
+        "test:node": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run test:node", "cwd": "webgpu-graph-algorithms" }
+        },
+        "test:browser": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run test:browser:ci", "cwd": "webgpu-graph-algorithms" }
+        },
+        "test:limits": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run test:limits", "cwd": "webgpu-graph-algorithms" }
+        },
+        "test:ui": {
+            "executor": "nx:run-commands",
+            "options": { "command": "vitest --ui", "cwd": "webgpu-graph-algorithms" }
+        },
+        "coverage": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run coverage", "cwd": "webgpu-graph-algorithms" }
+        },
+        "lint": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run lint", "cwd": "webgpu-graph-algorithms" }
+        },
+        "typecheck": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run typecheck", "cwd": "webgpu-graph-algorithms" }
+        },
+        "benchmark": {
+            "executor": "nx:run-commands",
+            "options": { "command": "npm run bench", "cwd": "webgpu-graph-algorithms" }
+        }
+    }
+}

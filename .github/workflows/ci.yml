@@ -1,0 +1,56 @@
+# .github/workflows/ci.yml -- default lane, required
+name: CI
+on:
+    push: { branches: [master] }
+    pull_request:
+    workflow_dispatch:
+permissions: { contents: read }
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+env:
+    WEBGPU_NPM_PIN_NOTE: "webgpu@0.4.0: 0.6.1 verified to need glibc 2.38 (0.5.x assumed); dev box is Ubuntu 22.04 / 2.35"
+
+jobs:
+    test:
+        name: Test (software adapters)
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        defaults: { run: { working-directory: packages, shell: bash } }   # shell: bash = pipefail, so a piped step cannot mask a non-zero exit
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with: { package_json_file: packages/package.json }
+            - uses: actions/setup-node@v4
+              with: { node-version: 22.x, cache: pnpm, cache-dependency-path: packages/pnpm-lock.yaml }
+            - run: pnpm install --frozen-lockfile
+            - name: Install Mesa lavapipe (software Vulkan ICD for Dawn-in-Node; not preinstalled on ubuntu-24.04)
+              run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
+            - run: pnpm run build                    # = pnpm -r run build:all (tsc + the vite bundle): dist/browser.js, dist/node.js and their d.ts shims exist only after the bundle step (2.5)
+            - run: pnpm -r run lint                  # eslint + tsc --noEmit + the strict-consumer compile (3.1)
+            - run: pnpm exec knip
+            - name: Node suite on lavapipe (coverage with thresholds; subgroup twins in-process, plus the no-subgroups pass)
+              working-directory: packages/webgpu-graph-algorithms
+              env:
+                  GRAPHTY_GPU_ADAPTER: llvmpipe
+                  GRAPHTY_GPU_REQUIRE: any
+                  VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+                  XDG_RUNTIME_DIR: /tmp
+              run: |
+                  pnpm exec vitest run --project=node --coverage
+                  GRAPHTY_GPU_NO_SUBGROUPS=1 pnpm exec vitest run --project=node test/primitives test/layouts --passWithNoTests
+            - name: Cache Playwright browsers
+              id: pw
+              uses: actions/cache@v4
+              with: { path: ~/.cache/ms-playwright, key: "playwright-${{ runner.os }}-${{ hashFiles('packages/pnpm-lock.yaml') }}" }
+            - if: steps.pw.outputs.cache-hit != 'true'
+              run: pnpm exec playwright install chromium --with-deps
+            - if: steps.pw.outputs.cache-hit == 'true'
+              run: pnpm exec playwright install-deps chromium
+            - name: Browser smoke on SwiftShader
+              working-directory: packages/webgpu-graph-algorithms
+              env: { GRAPHTY_BROWSER_GPU: swiftshader, GRAPHTY_GPU_REQUIRE: any }
+              run: node scripts/run-browser-project.js   # timeout -k 10 600 around vitest --project=browser --reporter=json; exit 124 passes iff the JSON has numTotalTests > 0 and numFailedTests === 0 (11.6, the browser.close() hang)
+            - uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with: { name: coverage-webgpu-graph-algorithms, path: packages/webgpu-graph-algorithms/coverage/lcov.info, retention-days: 1, if-no-files-found: error, overwrite: true }   # overwrite: a re-run of the job would otherwise fail with "artifact already exists" (v4 artifacts are immutable per run)

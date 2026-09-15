@@ -1,7 +1,7 @@
 /**
  * Knip configuration for the graphty staging workspace.
  *
- * Mirrors the shape of the monorepo's knip.config.ts so the two package
+ * Mirrors the shape of the monorepo's knip.config.ts so the package
  * entries below can be pasted into it on move-in (design section 13.3).
  * Run with: pnpm run lint:knip
  *
@@ -37,6 +37,24 @@ const config: KnipConfig = {
         // graph-io package
         "graph-io": {
             entry: ["src/index.ts", "test/**/*.test.ts", "test/types/**/*.test-d.ts", "scripts/**/*.{ts,js}"],
+            project: ["src/**/*.ts", "test/**/*.ts", "benchmarks/**/*.ts", "scripts/**/*.{ts,js}"],
+        },
+
+        // webgpu-graph-algorithms package: two extra entries because the root barrel re-exports neither subpath.
+        // benchmarks/run.ts is inferred from the package.json bench scripts; @vitest/browser and playwright are
+        // resolved by knip's vitest plugin from vitest.config.ts, so neither needs ignoreDependencies.
+        "webgpu-graph-algorithms": {
+            entry: [
+                "src/index.ts",
+                "src/browser/index.ts",
+                "src/node/index.ts",
+                "test/**/*.test.ts",
+                "test/types/**/*.test-d.ts",
+                "test/setup/*.ts",
+                "test/fixtures/**/*.ts",
+                "benchmarks/layout-run.ts",
+                "scripts/**/*.{ts,js}",
+            ],
             project: ["src/**/*.ts", "test/**/*.ts", "benchmarks/**/*.ts", "scripts/**/*.{ts,js}"],
         },
     },

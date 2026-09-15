@@ -1,0 +1,81 @@
+# .github/workflows/gpu.yml -- GPU lane, never required, never a job of CI
+name: GPU
+on:
+    push: { branches: [master] }
+    pull_request: { types: [labeled, synchronize] }
+    schedule: [{ cron: "17 6 * * *" }]          # nightly
+    workflow_dispatch:
+permissions: { contents: read }
+concurrency:
+    group: gpu-lane-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+    changed:                                     # nightly cost guard: skip when master has not moved since the last green GPU run (12.6)
+        runs-on: ubuntu-latest
+        outputs:
+            run: ${{ steps.check.outputs.run }}
+        steps:
+            - id: check
+              env: { GH_TOKEN: "${{ github.token }}" }
+              run: |
+                  if [ "${{ github.event_name }}" != "schedule" ]; then echo run=true >> "$GITHUB_OUTPUT"; exit 0; fi
+                  last=$(gh run list --workflow GPU --branch master --status success --limit 1 --json headSha --jq '.[0].headSha')
+                  [ "$last" = "${{ github.sha }}" ] && echo run=false >> "$GITHUB_OUTPUT" || echo run=true >> "$GITHUB_OUTPUT"
+    test-gpu:
+        name: Test (NVIDIA T4, GitHub-hosted)
+        needs: changed
+        if: >-
+            needs.changed.outputs.run == 'true' &&
+            (github.event_name != 'pull_request' ||
+             (github.event.pull_request.head.repo.full_name == github.repository &&
+              contains(github.event.pull_request.labels.*.name, 'gpu')))
+        runs-on: gpu-linux-t4                    # the runner created in 12.4 (runner group `gpu`); machine.dev alternative: `machine/gpu=t4`
+        timeout-minutes: 45
+        env:
+            GRAPHTY_GPU_REQUIRE: nvidia                 # a software adapter fails the job
+            GRAPHTY_BROWSER_GPU: nvidia                 # --enable-unsafe-webgpu --enable-features=Vulkan --use-angle=vulkan --disable-vulkan-surface
+            GRAPHTY_RUNNER_CLASS: gpu-linux-t4          # the benchmark runner class of the T4 lane is the runner name (6.4; section 9 item 5)
+            XDG_RUNTIME_DIR: /tmp
+        defaults: { run: { working-directory: packages/webgpu-graph-algorithms, shell: bash } }
+        steps:
+            - uses: actions/checkout@v4
+            - name: Driver up (the partner image may need the modules loaded; G0 records whether this step is a no-op)
+              run: sudo modprobe nvidia nvidia_uvm || true; nvidia-smi
+            - uses: pnpm/action-setup@v4
+              with: { package_json_file: packages/package.json }
+            - uses: actions/setup-node@v4
+              with: { node-version: 22.x, cache: pnpm, cache-dependency-path: packages/pnpm-lock.yaml }
+            - run: pnpm install --frozen-lockfile
+              working-directory: packages
+            - run: pnpm run build
+              working-directory: packages
+            - name: Adapter report (fails loudly on a software adapter; samples GPU utilisation for 10 s)
+              run: node scripts/gpu-report.js > gpu-report.json && cat gpu-report.json   # no pipe into tee: the report's non-zero exit must reach the step
+            - name: graph-format GPU audit on NVIDIA (canary)
+              working-directory: packages/graph-format
+              run: pnpm exec vitest run test/audit/gpu-upload.test.ts 2>&1 | tee canary.log && grep -q "adapter vendor=nvidia" canary.log   # the audit reads no env var (dawn.create([])) and SKIPS on acquisition failure; the grep turns a skip or a lavapipe pick into a red step
+            - run: pnpm exec vitest run --project=node --project=node-limits
+            - run: GRAPHTY_GPU_NO_SUBGROUPS=1 pnpm exec vitest run --project=node        # the whole node project on the twins, layouts included
+            - name: Cache Playwright browsers
+              id: pw
+              uses: actions/cache@v4
+              with: { path: ~/.cache/ms-playwright, key: "playwright-${{ runner.os }}-${{ hashFiles('packages/pnpm-lock.yaml') }}" }
+            - if: steps.pw.outputs.cache-hit != 'true'
+              run: pnpm exec playwright install chromium --with-deps      # a fresh VM each job; pnpm 10 runs no dependency lifecycle scripts
+            - name: Browser smoke on NVIDIA
+              run: node scripts/run-browser-project.js                     # G0 decides whether this needs `xvfb-run -a` on the T4 image (12.2)
+            - run: pnpm run bench                                          # tsx benchmarks/run.ts -> benchmarks/out/gpu-linux-t4.json
+            - run: node scripts/bench-compare.js                           # > 3x the checked-in baseline for THIS runner class (benchmarks/results/gpu-linux-t4.json) fails; the 4070 numbers are a different class and never compared here
+            - uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with: { name: "gpu-results-${{ github.run_id }}", path: "packages/webgpu-graph-algorithms/gpu-report.json\npackages/webgpu-graph-algorithms/benchmarks/out/", retention-days: 90, overwrite: true }
+
+    gpu-nightly-report:                          # the only job with a write permission; runs on a standard runner, never on the paid one
+        needs: test-gpu
+        if: always() && github.event_name == 'schedule' && needs.test-gpu.result != 'success'
+        runs-on: ubuntu-latest
+        permissions: { issues: write }
+        steps:
+            - uses: actions/github-script@v7
+              with: { script: "/* open or refresh the 'GPU lane nightly' tracking issue; only after two consecutive nightly failures (the previous night's result is read from the issue body), 12.6 */" }

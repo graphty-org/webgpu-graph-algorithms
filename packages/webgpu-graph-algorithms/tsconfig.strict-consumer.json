@@ -1,0 +1,17 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "composite": false,
+        "noEmit": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "types": ["node", "@webgpu/types"],
+        "paths": {
+            "@graphty/webgpu-graph-algorithms": ["./dist/webgpu-graph-algorithms.d.ts"],
+            "@graphty/webgpu-graph-algorithms/*": ["./dist/*.d.ts"],
+            "@graphty/graph-format": ["../graph-format/dist/graph-format.d.ts"]
+        }
+    },
+    "include": ["test/types/**/*.test-d.ts"],
+    "exclude": ["node_modules", "dist", "coverage", "tmp"]
+}

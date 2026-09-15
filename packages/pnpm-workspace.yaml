@@ -1,3 +1,4 @@
 packages:
     - "graph-format"
     - "graph-io"
+    - "webgpu-graph-algorithms"

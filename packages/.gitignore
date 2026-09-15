@@ -17,3 +17,8 @@ tmp/
 # Vite/Vitest timestamps
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# webgpu-graph-algorithms run output (contract 2.8)
+benchmarks/out/
+browser-results.json
+gpu-report.json

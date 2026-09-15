@@ -1,0 +1,26 @@
+{
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "composite": true,
+        "noEmit": true,
+        "noImplicitOverride": true,
+        "noUncheckedIndexedAccess": false,
+        "exactOptionalPropertyTypes": false,
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "types": ["node", "vitest/globals", "vite/client", "@webgpu/types"],
+        "paths": {
+            "@graphty/webgpu-graph-algorithms": ["./src/index.ts"],
+            "@graphty/webgpu-graph-algorithms/browser": ["./src/browser/index.ts"],
+            "@graphty/webgpu-graph-algorithms/node": ["./src/node/index.ts"],
+            "@graphty/graph-format": ["../graph-format/src/index.ts"]
+        }
+    },
+    "include": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "benchmarks/**/*.ts",
+        "scripts/**/*.d.ts",
+        "../graph-format/src/**/*.ts"
+    ],
+    "exclude": ["node_modules", "dist", "coverage", "tmp"]
+}

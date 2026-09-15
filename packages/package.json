@@ -3,7 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "description": "Staging workspace for packages destined for the graphty monorepo (graph-format, graph-io)",
+    "description": "Staging workspace for packages destined for the graphty monorepo (graph-format, graph-io, webgpu-graph-algorithms)",
     "scripts": {
         "build": "pnpm -r run build:all",
         "test": "pnpm -r run test",
