@@ -1,0 +1,126 @@
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -383,6 +383,70 @@
+         specifier: ^3.2.6
+         version: 3.2.7(@types/node@20.19.27)(@vitest/browser@3.2.7)(@vitest/ui@3.2.4)(happy-dom@20.14.3)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+ 
++  graph-format:
++    devDependencies:
++      '@vitest/coverage-v8':
++        specifier: ^3.2.4
++        version: 3.2.4(@vitest/browser@3.2.7)(vitest@3.2.7)
++      '@vitest/ui':
++        specifier: ^3.2.4
++        version: 3.2.4(vitest@3.2.7)
++      '@webgpu/types':
++        specifier: ^0.1.72
++        version: 0.1.72
++      fast-check:
++        specifier: ^4.2.0
++        version: 4.5.2
++      tsx:
++        specifier: ^4.20.3
++        version: 4.21.0
++      typescript:
++        specifier: ^5.9.3
++        version: 5.9.3
++      vite:
++        specifier: ^7.3.5
++        version: 7.3.6(@types/node@20.19.27)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
++      vitest:
++        specifier: ^3.2.6
++        version: 3.2.7(@types/node@20.19.27)(@vitest/browser@3.2.7)(@vitest/ui@3.2.4)(happy-dom@20.14.3)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
++      webgpu:
++        specifier: ^0.4.0
++        version: 0.4.0
++
++  graph-io:
++    dependencies:
++      '@graphty/graph-format':
++        specifier: workspace:*
++        version: link:../graph-format
++      fast-xml-parser:
++        specifier: ^5.5.6
++        version: 5.11.1
++      papaparse:
++        specifier: ^5.5.3
++        version: 5.5.3
++    devDependencies:
++      '@types/papaparse':
++        specifier: ^5.5.0
++        version: 5.5.2
++      '@vitest/coverage-v8':
++        specifier: ^3.2.4
++        version: 3.2.4(@vitest/browser@3.2.7)(vitest@3.2.7)
++      '@vitest/ui':
++        specifier: ^3.2.4
++        version: 3.2.4(vitest@3.2.7)
++      tsx:
++        specifier: ^4.20.3
++        version: 4.21.0
++      typescript:
++        specifier: ^5.9.3
++        version: 5.9.3
++      vite:
++        specifier: ^7.3.5
++        version: 7.3.6(@types/node@20.19.27)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
++      vitest:
++        specifier: ^3.2.6
++        version: 3.2.7(@types/node@20.19.27)(@vitest/browser@3.2.7)(@vitest/ui@3.2.4)(happy-dom@20.14.3)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
++
+   graphty:
+     dependencies:
+       '@babylonjs/core':
+@@ -4326,8 +4390,8 @@
+   '@webassemblyjs/wast-printer@1.14.1':
+     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
+ 
+-  '@webgpu/types@0.1.68':
+-    resolution: {integrity: sha512-3ab1B59Ojb6RwjOspYLsTpCzbNB3ZaamIAxBMmvnNkiDoLTZUOBXZ9p5nAYVEkQlDdf6qAZWi1pqj9+ypiqznA==}
++  '@webgpu/types@0.1.72':
++    resolution: {integrity: sha512-0cF7RFM2edNoiIS1ODJp0/Gzv4/xSXhwoR0YCza+OWpJWtn4wmo9DvK91aLlH9+uUnwIriP7ZiC3WitmyhuzBw==}
+ 
+   '@xn-sakina/rml-darwin-arm64@2.6.0':
+     resolution: {integrity: sha512-RuFHj6ro6Q24gPqNQGvH4uxpsvbgqBBy+ZUK+jbMuMaw4wyti7F6klQWuikBJAxhWpmRbhAB/jrq0PC82qlh5A==}
+@@ -9975,6 +10039,9 @@
+   web-worker@1.2.0:
+     resolution: {integrity: sha512-PgF341avzqyx60neE9DD+XS26MMNMoUQRz9NOZwW32nPQrF6p77f1htcnjBSEV8BGMKZ16choqUG4hyI0Hx7mA==}
+ 
++  webgpu@0.4.0:
++    resolution: {integrity: sha512-F5pimn3Aoi0zWjuRdiVs5TnrUwSzD2lESBohsIUsqyitWkGRQlXU2fhV6ycXlQTa1bvAf3sjqiUpBEpmSQ5ptA==}
++
+   webidl-conversions@3.0.1:
+     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
+ 
+@@ -14323,7 +14390,7 @@
+       '@tweenjs/tween.js': 23.1.3
+       '@types/stats.js': 0.17.4
+       '@types/webxr': 0.5.24
+-      '@webgpu/types': 0.1.68
++      '@webgpu/types': 0.1.72
+       fflate: 0.8.2
+       meshoptimizer: 0.22.0
+ 
+@@ -14999,7 +15066,7 @@
+       '@webassemblyjs/ast': 1.14.1
+       '@xtuc/long': 4.2.2
+ 
+-  '@webgpu/types@0.1.68': {}
++  '@webgpu/types@0.1.72': {}
+ 
+   '@xn-sakina/rml-darwin-arm64@2.6.0':
+     optional: true
+@@ -21521,6 +21588,13 @@
+ 
+   web-worker@1.2.0: {}
+ 
++  webgpu@0.4.0:
++    dependencies:
++      '@webgpu/types': 0.1.72
++      debug: 4.4.3(supports-color@7.2.0)
++    transitivePeerDependencies:
++      - supports-color
++
+   webidl-conversions@3.0.1: {}
+ 
+   webidl-conversions@7.0.0: {}

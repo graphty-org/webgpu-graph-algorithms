@@ -1,0 +1,16 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "composite": false,
+        "noEmit": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "paths": {
+            "@graphty/graph-io": ["./dist/graph-io.d.ts"],
+            "@graphty/graph-io/*": ["./dist/*.d.ts"],
+            "@graphty/graph-format": ["../graph-format/dist/graph-format.d.ts"]
+        }
+    },
+    "include": ["test/types/**/*.test-d.ts"],
+    "exclude": ["node_modules", "dist", "coverage", "tmp"]
+}

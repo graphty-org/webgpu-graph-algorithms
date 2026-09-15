@@ -1,0 +1,75 @@
+{
+    "name": "@graphty/graph-format",
+    "version": "0.1.0",
+    "description": "Frozen CSR graph data format over typed arrays, shared by CPU and WebGPU graph algorithms",
+    "author": "Adam Powers <apowers@ato.ms>",
+    "type": "module",
+    "main": "dist/graph-format.js",
+    "types": "dist/graph-format.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/graph-format.d.ts",
+            "import": "./dist/graph-format.js",
+            "default": "./dist/graph-format.js"
+        }
+    },
+    "sideEffects": false,
+    "files": [
+        "dist/",
+        "src/",
+        "README.md",
+        "LICENSE"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "engines": {
+        "node": ">=18.19.0"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "build:bundle": "node scripts/build-bundle.js",
+        "build:all": "npm run build && npm run build:bundle",
+        "lint": "eslint && tsc --noEmit -p tsconfig.json",
+        "lint:fix": "eslint --fix",
+        "typecheck": "tsc --noEmit -p tsconfig.json",
+        "typecheck:strict-consumer": "tsc -p tsconfig.strict-consumer.json",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "coverage": "vitest run --coverage",
+        "coverage:preview": "npx serve coverage -p 9056",
+        "benchmark": "tsx benchmarks/run.ts",
+        "ready:commit": "npm run build:all && npm run lint && npm run typecheck:strict-consumer && npm run test:run"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/graphty-org/graphty-monorepo.git",
+        "directory": "graph-format"
+    },
+    "keywords": [
+        "graph",
+        "csr",
+        "compressed-sparse-row",
+        "typed-array",
+        "webgpu",
+        "graph-format"
+    ],
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/graphty-org/graphty-monorepo/issues"
+    },
+    "homepage": "https://github.com/graphty-org/graphty-monorepo/tree/master/graph-format#readme",
+    "devDependencies": {
+        "@vitest/coverage-v8": "^3.2.4",
+        "@webgpu/types": "^0.1.72",
+        "@vitest/ui": "^3.2.4",
+        "fast-check": "^4.2.0",
+        "tsx": "^4.20.3",
+        "typescript": "^5.9.3",
+        "vite": "^7.0.5",
+        "vitest": "^3.2.4",
+        "webgpu": "^0.4.0"
+    }
+}

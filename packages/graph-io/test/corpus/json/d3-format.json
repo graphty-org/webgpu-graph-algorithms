@@ -1,0 +1,16 @@
+{
+    "nodes": [
+        { "id": "a", "group": 1, "label": "Node A" },
+        { "id": "b", "group": 1, "label": "Node B" },
+        { "id": "c", "group": 2, "label": "Node C" },
+        { "id": "d", "group": 2, "label": "Node D" },
+        { "id": "e", "group": 3, "label": "Node E" }
+    ],
+    "links": [
+        { "source": "a", "target": "b", "value": 1 },
+        { "source": "b", "target": "c", "value": 2 },
+        { "source": "c", "target": "d", "value": 1 },
+        { "source": "d", "target": "e", "value": 3 },
+        { "source": "a", "target": "c", "value": 1 }
+    ]
+}

@@ -1,0 +1,62 @@
+{
+    "format": "json",
+    "description": "JSON format test files in various library formats",
+    "files": [
+        {
+            "path": "d3-format.json",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["d3", "nodes-links"]
+        },
+        {
+            "path": "cytoscape-format.json",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["cytoscape", "elements", "data-wrapper"]
+        },
+        {
+            "path": "sigma-format.json",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["sigma", "graphology", "key-attributes"]
+        },
+        {
+            "path": "visjs-format.json",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["visjs", "from-to"]
+        },
+        {
+            "path": "networkx-format.json",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["networkx", "directed-flag", "multigraph-flag"]
+        },
+        {
+            "path": "karate-d3.json",
+            "source": "created from karate.gml",
+            "license": "Academic",
+            "expectedNodes": 34,
+            "expectedEdges": 78,
+            "features": ["d3", "nodes-links", "medium"]
+        },
+        {
+            "path": "miserables.json",
+            "source": "https://github.com/d3/d3-plugins",
+            "license": "BSD",
+            "expectedNodes": 77,
+            "expectedEdges": 254,
+            "features": ["d3", "nodes-links", "real-world"]
+        }
+    ]
+}

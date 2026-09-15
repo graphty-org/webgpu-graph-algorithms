@@ -1,0 +1,6 @@
+Source,Target,Type,Weight,Label
+Alice,Bob,Directed,5.0,friendship
+Bob,Charlie,Directed,3.0,colleague
+Charlie,David,Undirected,1.0,acquaintance
+David,Alice,Directed,2.0,neighbor
+Alice,Charlie,Undirected,4.0,colleague

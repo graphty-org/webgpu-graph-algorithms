@@ -1,0 +1,18 @@
+{
+    "elements": {
+        "nodes": [
+            { "data": { "id": "n1", "label": "Node 1", "weight": 50 } },
+            { "data": { "id": "n2", "label": "Node 2", "weight": 30 } },
+            { "data": { "id": "n3", "label": "Node 3", "weight": 40 } },
+            { "data": { "id": "n4", "label": "Node 4", "weight": 25 } },
+            { "data": { "id": "n5", "label": "Node 5", "weight": 35 } }
+        ],
+        "edges": [
+            { "data": { "id": "e1", "source": "n1", "target": "n2", "weight": 1.0 } },
+            { "data": { "id": "e2", "source": "n2", "target": "n3", "weight": 2.5 } },
+            { "data": { "id": "e3", "source": "n3", "target": "n4", "weight": 1.5 } },
+            { "data": { "id": "e4", "source": "n4", "target": "n5", "weight": 3.0 } },
+            { "data": { "id": "e5", "source": "n1", "target": "n3", "weight": 0.5 } }
+        ]
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "format": "pajek",
+    "description": "Pajek NET format test files",
+    "files": [
+        {
+            "path": "simple.net",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["vertices", "arcs", "edges", "coordinates", "labels"]
+        },
+        {
+            "path": "karate.net",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 34,
+            "expectedEdges": 78,
+            "features": ["vertices", "edges", "labels"]
+        },
+        {
+            "path": "dolphins.net",
+            "source": "created from dolphins.gml",
+            "license": "Academic",
+            "expectedNodes": 62,
+            "expectedEdges": 159,
+            "features": ["vertices", "edges", "labels", "medium"]
+        },
+        {
+            "path": "football.net",
+            "source": "created from football.gml",
+            "license": "Academic",
+            "expectedNodes": 115,
+            "expectedEdges": 613,
+            "features": ["vertices", "edges", "labels", "large"]
+        }
+    ]
+}

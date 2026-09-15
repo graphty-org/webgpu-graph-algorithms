@@ -1,0 +1,253 @@
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -1,4 +1,6 @@
+ packages:
++    - "graph-format"
++    - "graph-io"
+     - "algorithms"
+     - "layout"
+     - "graphty-element"
+--- a/commitlint.config.js
++++ b/commitlint.config.js
+@@ -5,6 +5,8 @@
+             2,
+             "always",
+             [
++                "graph-format",
++                "graph-io",
+                 "algorithms",
+                 "layout",
+                 "graphty-element",
+--- a/knip.config.ts
++++ b/knip.config.ts
+@@ -32,6 +32,20 @@
+             ],
+         },
+ 
++        // graph-format package (design/graph-format/graph-format-design.md section 13.3)
++        "graph-format": {
++            entry: ["src/index.ts", "test/**/*.test.ts", "test/types/**/*.test-d.ts", "scripts/**/*.{ts,js}"],
++            project: ["src/**/*.ts", "test/**/*.ts", "benchmarks/**/*.ts", "scripts/**/*.{ts,js}"],
++            ignore: ["dist/**", "coverage/**", "node_modules/**"],
++        },
++
++        // graph-io package (src/index.ts re-exports every per-format subpath barrel)
++        "graph-io": {
++            entry: ["src/index.ts", "test/**/*.test.ts", "test/types/**/*.test-d.ts", "scripts/**/*.{ts,js}"],
++            project: ["src/**/*.ts", "test/**/*.ts", "benchmarks/**/*.ts", "scripts/**/*.{ts,js}"],
++            ignore: ["dist/**", "coverage/**", "node_modules/**"],
++        },
++
+         // Algorithms package
+         algorithms: {
+             entry: ["src/index.ts", "test/**/*.test.ts", "examples/**/*.ts", "scripts/**/*.{ts,js}"],
+--- a/package.json
++++ b/package.json
+@@ -40,7 +40,9 @@
+         "coverage:preview:algorithms": "npx serve algorithms/coverage -p 9051",
+         "coverage:preview:layout": "npx serve layout/coverage -p 9052",
+         "coverage:preview:graphty-element": "npx serve graphty-element/coverage -p 9053",
+-        "coverage:preview:graphty": "npx serve graphty/coverage -p 9054"
++        "coverage:preview:graphty": "npx serve graphty/coverage -p 9054",
++        "coverage:preview:graph-format": "npx serve graph-format/coverage -p 9056",
++        "coverage:preview:graph-io": "npx serve graph-io/coverage -p 9057"
+     },
+     "engines": {
+         "node": ">=18.19.0"
+--- a/README.md
++++ b/README.md
+@@ -55,6 +55,26 @@
+ 
+ ---
+ 
++### @graphty/graph-format
++
++[![npm version](https://img.shields.io/npm/v/@graphty/graph-format.svg)](https://www.npmjs.com/package/@graphty/graph-format)
++
++Frozen CSR graph data format over typed arrays, shared by the CPU and WebGPU graph algorithm packages. A builder with duplicate and direction policies, a node id map, typed attribute columns with validity bitmaps, lazy views (reverse, degrees, edge list), derived graphs, and a zero-copy wire form for workers and IndexedDB. Zero dependencies.
++
++[View package](./graph-format)
++
++---
++
++### @graphty/graph-io
++
++[![npm version](https://img.shields.io/npm/v/@graphty/graph-io.svg)](https://www.npmjs.com/package/@graphty/graph-io)
++
++Importers and exporters for the graph-format snapshot: GEXF, GraphML, GML, DOT, Pajek, CSV, JSON (node-link, d3, JGF, Cytoscape, graphology, vis) and Neo4j admin-import CSV, each behind a per-format subpath export, plus format sniffing and an import report with aggregated issues.
++
++[View package](./graph-io)
++
++---
++
+ ### @graphty/remote-logger
+ 
+ [![npm version](https://img.shields.io/npm/v/@graphty/remote-logger.svg)](https://www.npmjs.com/package/@graphty/remote-logger)
+--- a/tools/prepush.sh
++++ b/tools/prepush.sh
+@@ -64,6 +64,14 @@
+ # Each test package ORs into both flags: FAILED for the exit code, TESTS_FAILED so the
+ # per-block verdict below reports only what the tests themselves did.
+ 
++# graph-format - single project, all tests are fast (node, no browser)
++echo "  Testing graph-format..."
++(cd graph-format && npm run test:run) || { FAILED=1; TESTS_FAILED=1; }
++
++# graph-io - single project, all tests are fast (node, no browser); needs graph-format/dist (built above)
++echo "  Testing graph-io..."
++(cd graph-io && npm run test:run) || { FAILED=1; TESTS_FAILED=1; }
++
+ # algorithms - has test:run that runs --project=default
+ echo "  Testing algorithms..."
+ (cd algorithms && npm run test:run) || { FAILED=1; TESTS_FAILED=1; }
+--- a/tools/merge-coverage.sh
++++ b/tools/merge-coverage.sh
+@@ -26,7 +26,7 @@
+ OUTPUT_FILE="$ROOT_DIR/coverage/lcov.info"
+ 
+ # Packages to process
+-PACKAGES=("algorithms" "layout" "graphty" "graphty-element")
++PACKAGES=("graph-format" "graph-io" "algorithms" "layout" "graphty" "graphty-element")
+ 
+ # Colors for output
+ RED='\033[0;31m'
+@@ -75,6 +75,8 @@
+             echo ""
+             echo "Each package should have coverage/lcov.info generated before running this script."
+             echo "Run package-specific coverage commands first:"
++            echo "  cd graph-format && pnpm run coverage"
++            echo "  cd graph-io && pnpm run coverage"
+             echo "  cd algorithms && pnpm run coverage"
+             echo "  cd layout && pnpm run coverage"
+             echo "  cd graphty && pnpm run coverage"
+@@ -218,6 +220,8 @@
+ if [ $COLLECTED -eq 0 ]; then
+     log_error "No coverage files found."
+     log_error "Run coverage for each package first:"
++    log_error "  cd graph-format && pnpm run coverage"
++    log_error "  cd graph-io && pnpm run coverage"
+     log_error "  cd algorithms && pnpm run coverage"
+     log_error "  cd layout && pnpm run coverage"
+     log_error "  cd graphty && pnpm run coverage"
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -80,6 +80,15 @@
+               if: github.event_name == 'pull_request'
+               run: pnpm exec nx affected -t build --parallel=3
+ 
++            # graph-format and graph-io are not yet in graphty's dependency closure (the consumer
++            # migration of design/graph-format section 14 is pending), so a PR that touches only the
++            # older packages leaves their dist/ unbuilt; the Upload steps below would then produce no
++            # artifact and every test shard's Download step would fail with "Artifact not found".
++            # Build them explicitly; the Nx cache makes this a no-op when the affected build already did.
++            - name: Build graph-format and graph-io (PR)
++              if: github.event_name == 'pull_request'
++              run: pnpm exec nx run-many -t build --projects=graph-format,graph-io --parallel=2
++
+             - name: Lint affected (PR)
+               if: github.event_name == 'pull_request'
+               run: pnpm exec nx affected -t lint --parallel=3
+@@ -129,6 +138,20 @@
+               if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+               run: pnpm exec nx run layout:build:gh-pages
+ 
++            - name: Upload graph-format build
++              uses: actions/upload-artifact@v4
++              with:
++                  name: build-graph-format
++                  path: graph-format/dist/
++                  retention-days: 1
++
++            - name: Upload graph-io build
++              uses: actions/upload-artifact@v4
++              with:
++                  name: build-graph-io
++                  path: graph-io/dist/
++                  retention-days: 1
++
+             - name: Upload algorithms build
+               uses: actions/upload-artifact@v4
+               with:
+@@ -240,6 +263,8 @@
+             fail-fast: false
+             matrix:
+                 shard:
++                    - graph-format
++                    - graph-io
+                     - algorithms-default
+                     - algorithms-browser
+                     - layout
+@@ -257,6 +282,18 @@
+                     - graphty-element-storybook-3
+                     - graphty-element-storybook-4
+                 include:
++                    # graph-format - single shard (Node.js, no browser)
++                    - shard: graph-format
++                      package: graph-format
++                      test-command: pnpm exec nx run graph-format:coverage
++                      needs-browser: false
++                      needs-storybook: false
++                    # graph-io - single shard (Node.js, no browser); resolves @graphty/graph-format through graph-format/dist
++                    - shard: graph-io
++                      package: graph-io
++                      test-command: pnpm exec nx run graph-io:coverage
++                      needs-browser: false
++                      needs-storybook: false
+                     # algorithms - two shards (default and browser separated to avoid worker timeout)
+                     # Each shard outputs to coverage/ directory; CI artifacts are named coverage-algorithms-{default,browser}
+                     - shard: algorithms-default
+@@ -367,6 +404,18 @@
+               env:
+                   HUSKY: "0"
+ 
++            - name: Download graph-format build
++              uses: actions/download-artifact@v4
++              with:
++                  name: build-graph-format
++                  path: graph-format/dist/
++
++            - name: Download graph-io build
++              uses: actions/download-artifact@v4
++              with:
++                  name: build-graph-io
++                  path: graph-io/dist/
++
+             - name: Download algorithms build
+               uses: actions/download-artifact@v4
+               with:
+@@ -454,8 +503,8 @@
+                   retention-days: 1
+                   if-no-files-found: ignore
+ 
+-            - name: Upload coverage (algorithms/layout/graphty/remote-logger/compact-mantine)
+-              if: ${{ !cancelled() && (startsWith(matrix.shard, 'algorithms-') || matrix.shard == 'layout' || matrix.shard == 'graphty' || matrix.shard == 'remote-logger' || matrix.shard == 'compact-mantine') }}
++            - name: Upload coverage (graph-format/graph-io/algorithms/layout/graphty/remote-logger/compact-mantine)
++              if: ${{ !cancelled() && (matrix.shard == 'graph-format' || matrix.shard == 'graph-io' || startsWith(matrix.shard, 'algorithms-') || matrix.shard == 'layout' || matrix.shard == 'graphty' || matrix.shard == 'remote-logger' || matrix.shard == 'compact-mantine') }}
+               uses: actions/upload-artifact@v4
+               with:
+                   name: coverage-${{ matrix.shard }}
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -60,6 +60,22 @@
+ 
+             # Download build artifacts from CI workflow instead of rebuilding
+             # This ensures we release the exact same code that was tested
++            - name: Download graph-format build
++              uses: actions/download-artifact@v4
++              with:
++                  name: build-graph-format
++                  path: graph-format/dist/
++                  run-id: ${{ github.event.workflow_run.id }}
++                  github-token: ${{ secrets.GITHUB_TOKEN }}
++
++            - name: Download graph-io build
++              uses: actions/download-artifact@v4
++              with:
++                  name: build-graph-io
++                  path: graph-io/dist/
++                  run-id: ${{ github.event.workflow_run.id }}
++                  github-token: ${{ secrets.GITHUB_TOKEN }}
++
+             - name: Download algorithms build
+               uses: actions/download-artifact@v4
+               with:

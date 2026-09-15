@@ -1,0 +1,8 @@
+:START_ID(Person),:END_ID(Movie),:TYPE,roles:string[]
+p1,m1,ACTED_IN,Neo
+p1,m2,ACTED_IN,Neo
+p2,m1,ACTED_IN,Trinity
+p4,m3,ACTED_IN,Zachry;Dr. Henry Goose
+:START_ID(Person),:END_ID(Person),:TYPE
+p3,p1,DIRECTED_WITH
+p2,p1,KNOWS

@@ -1,0 +1,125 @@
+{
+    "name": "@graphty/graph-io",
+    "version": "0.1.0",
+    "description": "Importers and exporters (GEXF, GraphML, GML, DOT, Pajek, CSV, JSON, Neo4j) for the @graphty/graph-format snapshot",
+    "author": "Adam Powers <apowers@ato.ms>",
+    "type": "module",
+    "main": "dist/graph-io.js",
+    "types": "dist/graph-io.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/graph-io.d.ts",
+            "import": "./dist/graph-io.js",
+            "default": "./dist/graph-io.js"
+        },
+        "./gexf": {
+            "types": "./dist/gexf.d.ts",
+            "import": "./dist/gexf.js",
+            "default": "./dist/gexf.js"
+        },
+        "./graphml": {
+            "types": "./dist/graphml.d.ts",
+            "import": "./dist/graphml.js",
+            "default": "./dist/graphml.js"
+        },
+        "./gml": {
+            "types": "./dist/gml.d.ts",
+            "import": "./dist/gml.js",
+            "default": "./dist/gml.js"
+        },
+        "./dot": {
+            "types": "./dist/dot.d.ts",
+            "import": "./dist/dot.js",
+            "default": "./dist/dot.js"
+        },
+        "./pajek": {
+            "types": "./dist/pajek.d.ts",
+            "import": "./dist/pajek.js",
+            "default": "./dist/pajek.js"
+        },
+        "./csv": {
+            "types": "./dist/csv.d.ts",
+            "import": "./dist/csv.js",
+            "default": "./dist/csv.js"
+        },
+        "./json": {
+            "types": "./dist/json.d.ts",
+            "import": "./dist/json.js",
+            "default": "./dist/json.js"
+        },
+        "./neo4j": {
+            "types": "./dist/neo4j.d.ts",
+            "import": "./dist/neo4j.js",
+            "default": "./dist/neo4j.js"
+        }
+    },
+    "sideEffects": false,
+    "files": [
+        "dist/",
+        "src/",
+        "README.md",
+        "LICENSE"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "engines": {
+        "node": ">=18.19.0"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "build:bundle": "node scripts/build-bundle.js",
+        "build:all": "npm run build && npm run build:bundle",
+        "lint": "eslint && tsc --noEmit -p tsconfig.json",
+        "lint:fix": "eslint --fix",
+        "typecheck": "tsc --noEmit -p tsconfig.json",
+        "typecheck:strict-consumer": "tsc -p tsconfig.strict-consumer.json",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "coverage": "vitest run --coverage",
+        "coverage:preview": "npx serve coverage -p 9057",
+        "benchmark": "tsx benchmarks/run.ts",
+        "ready:commit": "npm run build:all && npm run lint && npm run typecheck:strict-consumer && npm run test:run"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/graphty-org/graphty-monorepo.git",
+        "directory": "graph-io"
+    },
+    "keywords": [
+        "graph",
+        "gexf",
+        "graphml",
+        "gml",
+        "dot",
+        "graphviz",
+        "pajek",
+        "csv",
+        "json",
+        "neo4j",
+        "graph-format"
+    ],
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/graphty-org/graphty-monorepo/issues"
+    },
+    "homepage": "https://github.com/graphty-org/graphty-monorepo/tree/master/graph-io#readme",
+    "dependencies": {
+        "@graphty/graph-format": "workspace:*"
+    },
+    "peerDependencies": {
+        "@graphty/graph-format": "^0.1.0"
+    },
+    "devDependencies": {
+        "@vitest/coverage-v8": "^3.2.4",
+        "@vitest/ui": "^3.2.4",
+        "fast-check": "^4.2.0",
+        "fast-xml-parser": "^5.11.1",
+        "tsx": "^4.20.3",
+        "typescript": "^5.9.3",
+        "vite": "^7.0.5",
+        "vitest": "^3.2.4"
+    }
+}

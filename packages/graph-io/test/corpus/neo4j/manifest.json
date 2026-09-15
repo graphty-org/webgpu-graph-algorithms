@@ -1,0 +1,83 @@
+{
+    "format": "neo4j",
+    "description": "neo4j-admin import CSV test files (written for graph-io; no public corpus exists for this format)",
+    "files": [
+        {
+            "path": "social-bundle.csv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 6,
+            "expectedEdges": 8,
+            "features": [
+                "bundle",
+                "labels",
+                "typed",
+                "lists",
+                "date",
+                "quoted",
+                "multiline",
+                "weighted",
+                "self-loop",
+                "parallel"
+            ]
+        },
+        {
+            "path": "movies-nodes.csv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 7,
+            "expectedEdges": 0,
+            "features": ["id-spaces", "stored-id", "labels", "two-sections"],
+            "with": {
+                "relationships": ["movies-rels.csv"],
+                "expectedNodes": 7,
+                "expectedEdges": 6
+            }
+        },
+        {
+            "path": "movies-rels.csv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 7,
+            "expectedEdges": 6,
+            "features": ["id-spaces", "relationships-only", "missing-nodes", "lists"]
+        },
+        {
+            "path": "typed-properties.csv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 3,
+            "expectedEdges": 3,
+            "features": [
+                "typed",
+                "every-type",
+                "point",
+                "temporal",
+                "companion",
+                "long-precision",
+                "ignore",
+                "empty-strings",
+                "weighted"
+            ]
+        },
+        {
+            "path": "karate-neo4j.csv",
+            "source": "converted from gml/karate.gml (Zachary 1977)",
+            "license": "Academic",
+            "expectedNodes": 34,
+            "expectedEdges": 78,
+            "features": ["numeric-ids", "medium", "labels", "type"]
+        },
+        {
+            "path": "crlf-tabs.tsv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 3,
+            "expectedEdges": 2,
+            "features": ["tab-delimiter", "crlf", "bom", "blank-lines", "header-options"],
+            "options": {
+                "delimiter": "\t"
+            }
+        }
+    ]
+}

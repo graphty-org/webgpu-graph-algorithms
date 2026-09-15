@@ -1,0 +1,7 @@
+*Vertices 3
+1 "A"
+invalid vertex line here
+3 "C"
+*Edges
+1 2
+2 3

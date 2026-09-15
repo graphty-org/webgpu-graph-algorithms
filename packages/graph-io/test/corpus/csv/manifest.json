@@ -1,0 +1,38 @@
+{
+    "format": "csv",
+    "description": "CSV format test files",
+    "files": [
+        {
+            "path": "simple-edges.csv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["edge-list", "weighted"]
+        },
+        {
+            "path": "gephi-format.csv",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 4,
+            "expectedEdges": 5,
+            "features": ["gephi", "directed", "weighted", "labels"]
+        },
+        {
+            "path": "dolphins-medium.csv",
+            "source": "created from dolphins.gml",
+            "license": "Academic",
+            "expectedNodes": 31,
+            "expectedEdges": 50,
+            "features": ["gephi", "undirected", "medium"]
+        },
+        {
+            "path": "got-edges.csv",
+            "source": "https://github.com/melaniewalsh/sample-social-network-datasets",
+            "license": "CC0",
+            "expectedNodes": 107,
+            "expectedEdges": 352,
+            "features": ["gephi", "weighted", "social-network"]
+        }
+    ]
+}

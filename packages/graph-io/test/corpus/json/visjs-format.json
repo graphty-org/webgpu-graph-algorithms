@@ -1,0 +1,16 @@
+{
+    "nodes": [
+        { "id": 1, "label": "Node 1", "color": "#FF0000" },
+        { "id": 2, "label": "Node 2", "color": "#00FF00" },
+        { "id": 3, "label": "Node 3", "color": "#0000FF" },
+        { "id": 4, "label": "Node 4", "color": "#FFFF00" },
+        { "id": 5, "label": "Node 5", "color": "#FF00FF" }
+    ],
+    "edges": [
+        { "from": 1, "to": 2, "label": "edge 1" },
+        { "from": 2, "to": 3, "label": "edge 2" },
+        { "from": 3, "to": 4, "label": "edge 3" },
+        { "from": 4, "to": 5, "label": "edge 4" },
+        { "from": 5, "to": 1, "label": "edge 5" }
+    ]
+}

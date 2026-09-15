@@ -1,0 +1,30 @@
+{
+    "format": "graphml",
+    "description": "GraphML format test files",
+    "files": [
+        {
+            "path": "simple.graphml",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 5,
+            "expectedEdges": 5,
+            "features": ["basic", "keys", "data-elements"]
+        },
+        {
+            "path": "yfiles-sample.graphml",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 4,
+            "expectedEdges": 4,
+            "features": ["yfiles", "ShapeNode", "PolyLineEdge", "geometry", "colors"]
+        },
+        {
+            "path": "got-network.graphml",
+            "source": "https://github.com/melaniewalsh/sample-social-network-datasets",
+            "license": "CC0",
+            "expectedNodes": 107,
+            "expectedEdges": 352,
+            "features": ["real-world", "social-network", "weighted", "labels"]
+        }
+    ]
+}

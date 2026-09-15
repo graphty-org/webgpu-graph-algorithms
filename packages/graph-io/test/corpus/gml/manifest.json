@@ -1,0 +1,46 @@
+{
+    "format": "gml",
+    "description": "GML format test files from Mark Newman's network data",
+    "files": [
+        {
+            "path": "minimal.gml",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 3,
+            "expectedEdges": 2,
+            "features": ["minimal", "basic"]
+        },
+        {
+            "path": "karate.gml",
+            "source": "http://www-personal.umich.edu/~mejn/netdata/",
+            "license": "Academic",
+            "expectedNodes": 34,
+            "expectedEdges": 78,
+            "features": ["basic", "social-network"]
+        },
+        {
+            "path": "dolphins.gml",
+            "source": "http://www-personal.umich.edu/~mejn/netdata/",
+            "license": "Academic",
+            "expectedNodes": 62,
+            "expectedEdges": 159,
+            "features": ["labels", "social-network"]
+        },
+        {
+            "path": "polbooks.gml",
+            "source": "http://www-personal.umich.edu/~mejn/netdata/",
+            "license": "Academic",
+            "expectedNodes": 105,
+            "expectedEdges": 441,
+            "features": ["political", "larger"]
+        },
+        {
+            "path": "football.gml",
+            "source": "http://www-personal.umich.edu/~mejn/netdata/",
+            "license": "Academic",
+            "expectedNodes": 115,
+            "expectedEdges": 613,
+            "features": ["sports", "largest"]
+        }
+    ]
+}

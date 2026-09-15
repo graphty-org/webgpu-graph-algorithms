@@ -1,0 +1,8 @@
+digraph G {
+    subgraph cluster_0 {
+        A -> B;
+        subgraph cluster_1 {
+            C -> D;
+        // Missing closing brace for cluster_1
+    }
+}

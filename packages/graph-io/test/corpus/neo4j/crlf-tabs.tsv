@@ -1,0 +1,8 @@
+﻿nodeId:ID{label:Thing}	name	n:int
+a	Alpha	1
+
+b	Beta	2
+c	"Gam	ma"	3
+:START_ID	:END_ID	:TYPE
+a	b	NEXT
+b	c	NEXT

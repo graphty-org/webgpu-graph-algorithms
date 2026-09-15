@@ -1,0 +1,17 @@
+userId:ID,:LABEL,name,age:int,score:double,active:boolean,tags:string[],joined:date
+u1,Person,Alice,34,0.5,true,admin;editor,2020-01-15
+u2,Person;Admin,Bob,28,1.25,false,,2019-11-02
+u3,Person,"Carol, Jr.",,,true,reader,
+u4,,Dan,41,3,true,"",2021-06-30
+u5,Person,"Eve ""the"" Great",19,-2.5,false,x;y;z,2018-02-28
+u6,Person,"Zoë
+Line two",55,1e3,true,solo,2022-12-31
+:START_ID,:END_ID,:TYPE,since:int,weight:double
+u1,u2,KNOWS,2015,0.5
+u2,u3,KNOWS,2016,
+u3,u1,FOLLOWS,2017,2
+u1,u4,MANAGES,2018,1
+u4,u5,KNOWS,,0.25
+u5,u6,BLOCKS,2020,
+u6,u6,LIKES,2021,7.5
+u1,u2,LIKES,2019,

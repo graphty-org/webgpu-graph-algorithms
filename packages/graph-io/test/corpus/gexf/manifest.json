@@ -1,0 +1,30 @@
+{
+    "format": "gexf",
+    "description": "GEXF format test files from Gephi datasets",
+    "files": [
+        {
+            "path": "minimal.gexf",
+            "source": "created",
+            "license": "MIT",
+            "expectedNodes": 3,
+            "expectedEdges": 2,
+            "features": ["minimal", "basic"]
+        },
+        {
+            "path": "lesmiserables.gexf",
+            "source": "https://github.com/gephi/gephi.github.io/tree/master/datasets",
+            "license": "Various",
+            "expectedNodes": 77,
+            "expectedEdges": 254,
+            "features": ["basic", "weighted-edges", "labels"]
+        },
+        {
+            "path": "airlines-sample.gexf",
+            "source": "https://github.com/gephi/gephi.github.io/tree/master/datasets",
+            "license": "Various",
+            "expectedNodes": 235,
+            "expectedEdges": 1297,
+            "features": ["attributes", "viz-namespace", "large-graph"]
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "format": "dot",
+    "description": "DOT format test files from Graphviz Gallery",
+    "files": [
+        {
+            "path": "hello.gv",
+            "source": "https://graphviz.org/Gallery/directed/hello.html",
+            "license": "EPL-1.0",
+            "expectedNodes": 2,
+            "expectedEdges": 1,
+            "features": ["basic", "digraph"]
+        },
+        {
+            "path": "cluster.gv",
+            "source": "https://graphviz.org/Gallery/directed/cluster.html",
+            "license": "EPL-1.0",
+            "expectedNodes": 10,
+            "expectedEdges": 13,
+            "features": ["subgraphs", "clusters", "attributes", "edge-chains"]
+        },
+        {
+            "path": "fsm.gv",
+            "source": "https://graphviz.org/Gallery/directed/fsm.html",
+            "license": "EPL-1.0",
+            "expectedNodes": 9,
+            "expectedEdges": 14,
+            "features": ["shapes", "labels", "numeric-ids", "default-attributes"]
+        },
+        {
+            "path": "datastruct.gv",
+            "source": "https://graphviz.org/Gallery/directed/datastruct.html",
+            "license": "EPL-1.0",
+            "expectedNodes": 13,
+            "expectedEdges": 17,
+            "features": ["record-shapes", "ports", "quoted-ids"]
+        },
+        {
+            "path": "fdpclust.gv",
+            "source": "https://graphviz.org/Gallery/undirected/fdpclust.html",
+            "license": "EPL-1.0",
+            "expectedNodes": 7,
+            "expectedEdges": 6,
+            "features": ["undirected", "nested-subgraphs", "cluster-edges"]
+        },
+        {
+            "path": "root.gv",
+            "source": "https://graphviz.org/Gallery/undirected/root.html",
+            "license": "EPL-1.0",
+            "expectedNodes": 1054,
+            "expectedEdges": 1083,
+            "features": ["large", "digraph", "sfdp-layout", "many-nodes"]
+        }
+    ]
+}

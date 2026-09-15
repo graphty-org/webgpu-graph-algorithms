@@ -1,0 +1,60 @@
+{
+    "name": "graph-format",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "graph-format/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "nx:run-commands",
+            "outputs": ["{projectRoot}/dist"],
+            "options": {
+                "command": "npm run build:all",
+                "cwd": "graph-format"
+            },
+            "dependsOn": ["^build"]
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npm run test:run",
+                "cwd": "graph-format"
+            }
+        },
+        "test:ui": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "vitest --ui",
+                "cwd": "graph-format"
+            }
+        },
+        "coverage": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npm run coverage",
+                "cwd": "graph-format"
+            }
+        },
+        "lint": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npm run lint",
+                "cwd": "graph-format"
+            }
+        },
+        "typecheck": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npm run typecheck",
+                "cwd": "graph-format"
+            }
+        },
+        "benchmark": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npm run benchmark",
+                "cwd": "graph-format"
+            }
+        }
+    }
+}

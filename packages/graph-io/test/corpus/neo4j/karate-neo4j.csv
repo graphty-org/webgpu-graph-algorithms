@@ -1,0 +1,114 @@
+:ID,:LABEL,club:string
+1,Member,Mr. Hi
+2,Member,Mr. Hi
+3,Member,Mr. Hi
+4,Member,Mr. Hi
+5,Member,Mr. Hi
+6,Member,Mr. Hi
+7,Member,Mr. Hi
+8,Member,Mr. Hi
+9,Member,Mr. Hi
+10,Member,Mr. Hi
+11,Member,Mr. Hi
+12,Member,Mr. Hi
+13,Member,Mr. Hi
+14,Member,Mr. Hi
+15,Member,Mr. Hi
+16,Member,Mr. Hi
+17,Member,Mr. Hi
+18,Member,Officer
+19,Member,Officer
+20,Member,Officer
+21,Member,Officer
+22,Member,Officer
+23,Member,Officer
+24,Member,Officer
+25,Member,Officer
+26,Member,Officer
+27,Member,Officer
+28,Member,Officer
+29,Member,Officer
+30,Member,Officer
+31,Member,Officer
+32,Member,Officer
+33,Member,Officer
+34,Member,Officer
+:START_ID,:END_ID,:TYPE
+2,1,TIES
+3,1,TIES
+3,2,TIES
+4,1,TIES
+4,2,TIES
+4,3,TIES
+5,1,TIES
+6,1,TIES
+7,1,TIES
+7,5,TIES
+7,6,TIES
+8,1,TIES
+8,2,TIES
+8,3,TIES
+8,4,TIES
+9,1,TIES
+9,3,TIES
+10,3,TIES
+11,1,TIES
+11,5,TIES
+11,6,TIES
+12,1,TIES
+13,1,TIES
+13,4,TIES
+14,1,TIES
+14,2,TIES
+14,3,TIES
+14,4,TIES
+17,6,TIES
+17,7,TIES
+18,1,TIES
+18,2,TIES
+20,1,TIES
+20,2,TIES
+22,1,TIES
+22,2,TIES
+26,24,TIES
+26,25,TIES
+28,3,TIES
+28,24,TIES
+28,25,TIES
+29,3,TIES
+30,24,TIES
+30,27,TIES
+31,2,TIES
+31,9,TIES
+32,1,TIES
+32,25,TIES
+32,26,TIES
+32,29,TIES
+33,3,TIES
+33,9,TIES
+33,15,TIES
+33,16,TIES
+33,19,TIES
+33,21,TIES
+33,23,TIES
+33,24,TIES
+33,30,TIES
+33,31,TIES
+33,32,TIES
+34,9,TIES
+34,10,TIES
+34,14,TIES
+34,15,TIES
+34,16,TIES
+34,19,TIES
+34,20,TIES
+34,21,TIES
+34,23,TIES
+34,24,TIES
+34,27,TIES
+34,28,TIES
+34,29,TIES
+34,30,TIES
+34,31,TIES
+34,32,TIES
+34,33,TIES

@@ -1,0 +1,11 @@
+{
+    "data": {
+        "graph": {
+            "vertices": [1, 2, 3],
+            "connections": [
+                [1, 2],
+                [2, 3]
+            ]
+        }
+    }
+}

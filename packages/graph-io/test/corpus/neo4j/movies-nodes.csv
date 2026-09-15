@@ -1,0 +1,9 @@
+movieId:ID(Movie),title,released:int,:LABEL
+m1,The Matrix,1999,Movie
+m2,"Matrix, Reloaded",2003,Movie;Sequel
+m3,Cloud Atlas,2012,Movie
+personId:ID(Person),name,born:int,:LABEL
+p1,Keanu Reeves,1964,Person;Actor
+p2,Carrie-Anne Moss,1967,Person;Actor
+p3,Lana Wachowski,1965,Person;Director
+p4,Tom Hanks,1956,Person;Actor

@@ -1,0 +1,9 @@
+id:ID,b:boolean,i:int,l:long,f:float,d:double,s:string,c:char,by:byte,sh:short,p:point,dt:date,lt:localtime,t:time,ldt:localdatetime,zdt:datetime,du:duration,li:int[],ld:double[],lb:boolean[],ls:string[],junk:IGNORE,untyped
+1,true,42,9007199254740993,0.5,0.1,hello,x,127,-32768,"{x:1.5, y:2, crs:'cartesian'}",2024-02-29,13:45:00,13:45:00Z,2024-02-29T13:45:00,2024-02-29T13:45:00+02:00,P1Y2M3D,1;2;3,0.5;1.5,true;false,a;b;c,skip me,plain
+2,false,-7,-12,1e-3,2.5e10,"multi
+line",y,,,,1999-12-31,00:00:00,23:59:59.5Z,1999-12-31T23:59:59.123,1999-12-31T23:59:59Z,PT5M,,,,,also skipped,
+3,1,0,0,,,"",,0,0,,,,,,,,,,,"",,""
+:START_ID,:END_ID,:TYPE,weight:double,d:double,ls:string[],dt:date
+1,2,LINK,1.5,0.25,q;r,2020-05-05
+2,3,LINK,,,,
+3,1,LINK,0,1e21,solo,2020-05-06

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">
+  <graph>
+    <nodes>
+      <node id="1" label="A">
+      <!-- Missing closing tag -->
+      <node id="2" label="B"/>
+    </nodes>
+  </graph>
+</gexf>

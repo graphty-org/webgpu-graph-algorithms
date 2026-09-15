@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+coverage/
+storybook-static/
+
+# Generated files
+*.min.js
+*.bundle.js
+
+# Package manager
+pnpm-lock.yaml
+
+# Git
+.git/
+
+# Temporary files
+tmp/
+.worktrees/
+
+# Documentation builds
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Other
+gh-pages/

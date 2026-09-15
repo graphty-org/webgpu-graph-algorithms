@@ -1,0 +1,4 @@
+digraph G {
+    A [label="unclosed string];
+    A -> B;
+}
