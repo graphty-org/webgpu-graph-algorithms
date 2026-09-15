@@ -1,0 +1,26 @@
+{
+  "name": "@graphty/webgpu-graph-algorithms",
+  "version": "0.0.0",
+  "description": "OIDC trusted publishing setup package for @graphty/webgpu-graph-algorithms",
+  "license": "MIT",
+  "author": "Adam Powers <apowers@ato.ms>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graphty-org/webgpu-graph-algorithms.git",
+    "directory": "packages/webgpu-graph-algorithms"
+  },
+  "homepage": "https://github.com/graphty-org/webgpu-graph-algorithms#readme",
+  "bugs": {
+    "url": "https://github.com/graphty-org/webgpu-graph-algorithms/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}
