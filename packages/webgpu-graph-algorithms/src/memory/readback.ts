@@ -40,6 +40,8 @@ interface SlotEntry {
     borrowed: boolean;
     /** True between the ring's own successful mapAsync and the unmap of returnSlot (a fallback when mapState is absent). */
     mapped: boolean;
+    /** True while the ring's own mapAsync is pending: destroyAll() defers the buffer's destruction until it settles. */
+    mapPending: boolean;
     /** True when the buffer was created through the allocator (and is destroyed through it). */
     readonly tracked: boolean;
 }
@@ -245,17 +247,34 @@ export class Readback {
         return count;
     }
 
-    /** Destroys every staging buffer (ctx.dispose()); idempotent. @internal */
+    /**
+     * Destroys every staging buffer (ctx.dispose()); idempotent. A slot whose mapAsync is still pending is NOT
+     * destroyed here: Dawn's Metal backend (dawn-node 0.4.0 on macOS) crashes the process when a buffer is destroyed
+     * with a map in flight, so its destruction is deferred to the moment the map settles (map() below), where the
+     * pending read still rejects with E_DISPOSED as the contract promises. Vulkan backends tolerate either order.
+     * @internal
+     */
     destroyAll(): void {
         for (const entry of this.ring) {
-            if (entry.tracked) {
-                this.allocator.destroy(entry.slot.buffer);
-            } else {
-                entry.slot.buffer.destroy();
+            if (entry.mapPending) {
+                continue;
             }
+            this.destroySlot(entry);
         }
         this.ring.length = 0;
         this.disposed = true;
+    }
+
+    /**
+     * Destroys one slot's buffer through the allocator when it was created there.
+     * @param entry - the slot
+     */
+    private destroySlot(entry: SlotEntry): void {
+        if (entry.tracked) {
+            this.allocator.destroy(entry.slot.buffer);
+        } else {
+            entry.slot.buffer.destroy();
+        }
     }
 
     /**
@@ -276,6 +295,7 @@ export class Readback {
             slot: Object.freeze({ index, buffer, capacity }),
             borrowed: false,
             mapped: false,
+            mapPending: false,
             tracked,
         };
         this.ring.push(entry);
@@ -288,21 +308,35 @@ export class Readback {
      * @param byteLength - the bytes to map
      */
     private async map(entry: SlotEntry, byteLength: number): Promise<void> {
+        entry.mapPending = true;
+        let mapped = false;
+        let failure: unknown = null;
         try {
             await entry.slot.buffer.mapAsync(MapMode.READ, 0, byteLength);
-            entry.mapped = true;
+            mapped = true;
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            if (this.disposed) {
-                throw new WebGpuGraphError("E_DISPOSED", "the readback ring was disposed while a read was pending", {
-                    label: "readback",
-                });
+            failure = err;
+        } finally {
+            entry.mapPending = false;
+        }
+        if (this.disposed) {
+            // destroyAll() ran while the map was pending (see its note): finish the deferred destruction here.
+            if (mapped) {
+                entry.slot.buffer.unmap();
             }
+            this.destroySlot(entry);
+            throw new WebGpuGraphError("E_DISPOSED", "the readback ring was disposed while a read was pending", {
+                label: "readback",
+            });
+        }
+        if (!mapped) {
+            const message = failure instanceof Error ? failure.message : String(failure);
             throw new WebGpuGraphError("E_DEVICE_LOST", `mapAsync rejected: ${message}`, {
                 reason: "mapAsync",
                 message,
             });
         }
+        entry.mapped = true;
     }
 
     /** Throws E_DISPOSED after destroyAll(). */
