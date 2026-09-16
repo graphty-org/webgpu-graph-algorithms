@@ -15,6 +15,9 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs"
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { checkAdapter, parseGpuRequire } from "../../scripts/gpu-policy.js";
+import { summarizeAdapter } from "../../src/device/acquire.js";
+import { createNodeGpu, type NodeGpuHandle } from "../../src/node/index.js";
 import { CAPS_SPEC_DEFAULT } from "../helpers/caps-tables.js";
 import { matrixCovers } from "../helpers/override-matrix.js";
 
@@ -87,10 +90,71 @@ export function assertMatrixCoverage(keys: Iterable<string>): void {
 }
 
 /** Clears the pipeline-key log directory (tmp/pipeline-keys/) and exports its path through GRAPHTY_PIPELINE_KEY_LOG. */
-export function setup(): void {
+export async function setup(): Promise<void> {
     rmSync(KEY_LOG_DIR, { recursive: true, force: true });
     mkdirSync(KEY_LOG_DIR, { recursive: true });
     process.env.GRAPHTY_PIPELINE_KEY_LOG = KEY_LOG_DIR;
+    await failFastWithoutAdapter();
+}
+
+/**
+ * The value of an environment variable, or undefined when unset / empty.
+ * @param name - the variable
+ * @returns the value or undefined
+ */
+function envOrUndefined(name: string): string | undefined {
+    const value = process.env[name];
+    return value === undefined || value === "" ? undefined : value;
+}
+
+/**
+ * Probes the adapter ONCE in the main process under the GRAPHTY_GPU_REQUIRE policy (spec 11.2) and fails the run
+ * with one readable message when the policy demands an adapter and none (or the wrong one) exists -- instead of
+ * every GPU test of every worker failing with the same line (the first GitHub run printed it ~1300 times). Under
+ * the unset (skip) policy nothing is probed: the workers skip each GPU test with the printed reason as before. The
+ * Dawn handle is dropped again so the main process can exit.
+ */
+async function failFastWithoutAdapter(): Promise<void> {
+    const policy = parseGpuRequire(process.env.GRAPHTY_GPU_REQUIRE);
+    if (policy.level === "skip") {
+        return;
+    }
+    const adapterFlag = envOrUndefined("GRAPHTY_GPU_ADAPTER");
+    const dawnFeatures = envOrUndefined("GRAPHTY_DAWN_FEATURES");
+    let handle: NodeGpuHandle | null = null;
+    let reason: string | null = null;
+    let info: { readonly vendor: string; readonly architecture: string } | null = null;
+    try {
+        handle = await createNodeGpu({
+            adapter: adapterFlag,
+            dawnFeatures: dawnFeatures === undefined ? undefined : dawnFeatures.split(","),
+        });
+        const adapter = await handle.gpu.requestAdapter();
+        if (adapter === null) {
+            reason = "requestAdapter() returned null: no usable WebGPU adapter";
+        } else {
+            const summary = summarizeAdapter(adapter);
+            info = { vendor: summary.vendor, architecture: summary.architecture };
+        }
+    } catch (err) {
+        reason = err instanceof Error ? err.message : String(err);
+    } finally {
+        handle?.dispose();
+    }
+    const verdict = checkAdapter(info, policy);
+    if (verdict.ok) {
+        return;
+    }
+    const lines = [
+        `GRAPHTY_GPU_REQUIRE=${policy.raw} requires a WebGPU adapter and the run cannot satisfy it; failing up front instead of in every GPU test.`,
+        `  ${verdict.reason ?? reason ?? "no WebGPU adapter"}`,
+        `  Dawn flags: adapter=${adapterFlag ?? "(any)"} features=${dawnFeatures ?? "(none)"}; platform ${process.platform}/${process.arch}`,
+        "  Hints: Linux needs a Vulkan ICD (lavapipe: apt install mesa-vulkan-drivers, then VK_DRIVER_FILES=<path of lvp_icd*.json>, on",
+        "  noble /usr/share/vulkan/icd.d/lvp_icd.json); the NVIDIA ICD under Dawn dlopen()s libEGL.so.1 (see CLAUDE.md, LD_LIBRARY_PATH);",
+        "  a missing native module means the optional peer dependency webgpu is not installed; unset GRAPHTY_GPU_REQUIRE to skip the",
+        "  GPU tests on a machine without a GPU.",
+    ];
+    throw new Error(lines.join("\n"));
 }
 
 /** Reads every worker's key log and asserts test/helpers/override-matrix.ts covers each key (throws with the uncovered keys, which fails the run). */
