@@ -17,7 +17,13 @@ import { type ForceAtlas2Stats, type GpuLayoutSimulation } from "../../src/types
 import { type ForceAtlas2Options } from "../../src/types/options.js";
 import { runFrameLoop } from "../helpers/frame-loop.js";
 import { fixture, randomEdges, snapshotOf } from "../helpers/graphs.js";
-import { acquireBrowser, browserGpu, browserScale, requireBrowserGpu } from "../setup/browser.js";
+import {
+    acquireBrowser,
+    browserExpectsSoftware,
+    browserGpu,
+    browserScale,
+    requireBrowserGpu,
+} from "../setup/browser.js";
 
 /**
  * Pins the adapter the test ran on: requireBrowserGpu only enforces GRAPHTY_GPU_REQUIRE, and under the default
@@ -25,7 +31,7 @@ import { acquireBrowser, browserGpu, browserScale, requireBrowserGpu } from "../
  * @param ctx - the context acquireBrowser handed out
  */
 function expectAdapterMatchesFlagSet(ctx: GpuContext): void {
-    expect(ctx.caps.software).toBe(browserGpu() === "swiftshader");
+    expect(ctx.caps.software).toBe(browserExpectsSoftware());
     if (browserGpu() === "nvidia") {
         expect(ctx.caps.vendor).toBe("nvidia");
     }

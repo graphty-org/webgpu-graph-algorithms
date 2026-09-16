@@ -4742,3 +4742,17 @@ reading is what the code and tests implement:
    the call, the next iteration continuing from them (checked through the
    re-synchronised oracle over 200 drags) -- instead of comparing across a
    batch that legitimately ran.
+
+Host matrix (2026-09-16, owner request after the WebKit finding): a third,
+INFORMATIONAL workflow `hosts.yml` beside the two lanes of 12.1 -- never a
+required check -- runs the node project and the browser smoke on the other
+shader compilers: `macos-latest` (an Apple Silicon VM: Dawn-node and Chromium
+on Metal, plus Playwright's WebKit as the Safari proxy while it is unknown
+whether that build exposes WebGPU) and `windows-latest` (no GPU; Dawn's
+D3D12 backend on WARP, Microsoft's software rasterizer). The 12.1 table is
+amended by this entry; `GRAPHTY_BROWSER_GPU` gains the value `metal` and
+`GRAPHTY_BROWSER=webkit` selects the WebKit instance. Also from the same
+day: the node project's globalSetup probes the adapter ONCE and fails the
+run with one readable message when `GRAPHTY_GPU_REQUIRE` demands an adapter
+that is absent (11.2's rule unchanged; the failure is no longer repeated by
+every GPU test).

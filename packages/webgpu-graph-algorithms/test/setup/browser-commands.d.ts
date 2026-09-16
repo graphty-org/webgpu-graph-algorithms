@@ -31,7 +31,7 @@ declare module "@vitest/browser/context" {
 declare global {
     interface ImportMetaEnv {
         readonly GRAPHTY_GPU_REQUIRE: string;
-        readonly GRAPHTY_BROWSER_GPU: "nvidia" | "swiftshader";
+        readonly GRAPHTY_BROWSER_GPU: "nvidia" | "swiftshader" | "metal";
         readonly GRAPHTY_NOISE_FLOOR_WRITE: string;
     }
 }

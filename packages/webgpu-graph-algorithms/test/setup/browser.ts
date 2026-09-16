@@ -22,9 +22,15 @@ export function browserPolicy(): GpuPolicy {
     return parseGpuRequire(import.meta.env.GRAPHTY_GPU_REQUIRE);
 }
 
-/** "nvidia" | "swiftshader" as forwarded. */
-export function browserGpu(): "nvidia" | "swiftshader" {
-    return import.meta.env.GRAPHTY_BROWSER_GPU === "nvidia" ? "nvidia" : "swiftshader";
+/** The flag set vitest.config.ts launched the browser with: "nvidia" | "swiftshader" | "metal" (the host lane on macOS: Chromium or WebKit on the runner's Metal device). */
+export function browserGpu(): "nvidia" | "swiftshader" | "metal" {
+    const value = import.meta.env.GRAPHTY_BROWSER_GPU;
+    return value === "nvidia" || value === "metal" ? value : "swiftshader";
+}
+
+/** Whether the launched adapter is expected to be a software one (only the SwiftShader flag set is). */
+export function browserExpectsSoftware(): boolean {
+    return browserGpu() === "swiftshader";
 }
 
 /** navigator.gpu or undefined (never throws). */
@@ -82,9 +88,9 @@ export async function acquireBrowser(options: BrowserGpuOptions = {}): Promise<G
     return ctx;
 }
 
-/** The browser's gpuScale(): 1 on nvidia, 1 / 50 on swiftshader. */
+/** The browser's gpuScale(): 1 on a hardware adapter (nvidia, metal), 1 / 50 on swiftshader. */
 export function browserScale(): number {
-    return browserGpu() === "nvidia" ? 1 : 1 / 50;
+    return browserExpectsSoftware() ? 1 / 50 : 1;
 }
 
 afterEach(async () => {

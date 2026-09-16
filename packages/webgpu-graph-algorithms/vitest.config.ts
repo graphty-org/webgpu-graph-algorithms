@@ -17,10 +17,16 @@ export const BROWSER_FLAGS = Object.freeze({
         "--disable-vulkan-surface",
     ]),
     swiftshader: Object.freeze(["--enable-unsafe-webgpu", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]),
+    // The host lane on macOS (hosts.yml): Chromium picks Dawn's Metal backend by itself; WebKit takes no flags.
+    metal: Object.freeze(["--enable-unsafe-webgpu"]),
 });
 
 const here = dirname(fileURLToPath(import.meta.url));
-const browserGpu = process.env.GRAPHTY_BROWSER_GPU === "nvidia" ? "nvidia" : "swiftshader";
+const browserGpuEnv = process.env.GRAPHTY_BROWSER_GPU;
+const browserGpu: keyof typeof BROWSER_FLAGS =
+    browserGpuEnv === "nvidia" || browserGpuEnv === "metal" ? browserGpuEnv : "swiftshader";
+/** GRAPHTY_BROWSER=webkit runs the browser project in Playwright's WebKit (the host lane's Safari proxy); default chromium. */
+const browserName: "chromium" | "webkit" = process.env.GRAPHTY_BROWSER === "webkit" ? "webkit" : "chromium";
 const gpuRequire = process.env.GRAPHTY_GPU_REQUIRE ?? "";
 const noiseFloorWrite = process.env.GRAPHTY_NOISE_FLOOR_WRITE ?? "";
 
@@ -209,10 +215,12 @@ export default defineConfig({
                         fileParallelism: false,
                         commands: { appendBenchRecord, writeNoiseFixture, recordNoiseRow },
                         instances: [
-                            {
-                                browser: "chromium",
-                                launch: { args: [...BROWSER_FLAGS[browserGpu]], env: browserLaunchEnv() },
-                            },
+                            browserName === "webkit"
+                                ? { browser: "webkit", launch: { env: browserLaunchEnv() } }
+                                : {
+                                      browser: "chromium",
+                                      launch: { args: [...BROWSER_FLAGS[browserGpu]], env: browserLaunchEnv() },
+                                  },
                         ],
                     },
                 },

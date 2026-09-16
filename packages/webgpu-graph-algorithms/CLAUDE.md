@@ -235,18 +235,19 @@ by its first `requestDevice` (spec 2.2 step 1). The one policy variable (D19), p
 Environment (spec 12.2; read ONLY by `test/setup/gpu.ts`, `vitest.config.ts` and `scripts/`; `src/` never
 reads an environment variable):
 
-| Variable                                  | Default lane                                                | GPU lane                                                | Local (dev box)                                                            |
-| ----------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `GRAPHTY_GPU_ADAPTER`                     | `llvmpipe`                                                  | unset (Dawn picks the discrete GPU)                     | unset (NVIDIA) or `llvmpipe` to mirror CI                                  |
-| `GRAPHTY_GPU_REQUIRE`                     | `any`                                                       | `nvidia`                                                | unset (skip with reason) or `hardware`                                     |
-| `GRAPHTY_BROWSER_GPU`                     | `swiftshader` (flag set)                                    | `nvidia` (flag set)                                     | `nvidia`                                                                   |
-| `GRAPHTY_GPU_NO_SUBGROUPS`                | a second pass over `test/primitives test/layouts` with `1`  | a second pass over the whole `node` project with `1`    | unset (the twins are also tested in-process)                               |
-| `GRAPHTY_DAWN_FEATURES`                   | unset                                                       | unset                                                   | optional Dawn toggles                                                      |
-| `GRAPHTY_EGL_LIB_DIR` / `LD_LIBRARY_PATH` | --                                                          | unset (the partner image has `libegl1`; verified at G0) | the extracted tree (`docs/HEADLESS_GPU_REPORT.md` appendix D)              |
-| `GRAPHTY_RUNNER_CLASS`                    | unset                                                       | `gpu-linux-t4`                                          | unset                                                                      |
-| `VK_DRIVER_FILES`                         | `/usr/share/vulkan/icd.d/lvp_icd.x86_64.json` (determinism) | unset                                                   | unset                                                                      |
-| `XDG_RUNTIME_DIR`                         | `/tmp` (silences Mesa)                                      | `/tmp`                                                  | `/tmp`                                                                     |
-| `CI`                                      | set by GitHub                                               | set by GitHub                                           | unset: the build-output test's bundle assertions hard-fail only under `CI` |
+| Variable                                  | Default lane                                                | GPU lane                                                | Local (dev box)                                                                                                                                 |
+| ----------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GRAPHTY_GPU_ADAPTER`                     | `llvmpipe`                                                  | unset (Dawn picks the discrete GPU)                     | unset (NVIDIA) or `llvmpipe` to mirror CI                                                                                                       |
+| `GRAPHTY_GPU_REQUIRE`                     | `any`                                                       | `nvidia`                                                | unset (skip with reason) or `hardware`                                                                                                          |
+| `GRAPHTY_BROWSER_GPU`                     | `swiftshader` (flag set)                                    | `nvidia` (flag set)                                     | `nvidia`; the host lane (hosts.yml) uses `metal` on macos-latest (Chromium picks Dawn's Metal backend) and `swiftshader` on windows-latest      |
+| `GRAPHTY_BROWSER`                         | unset (chromium)                                            | unset                                                   | unset; `webkit` runs the browser project in Playwright's WebKit (the host lane's Safari proxy, a spike step until it is known to expose WebGPU) |
+| `GRAPHTY_GPU_NO_SUBGROUPS`                | a second pass over `test/primitives test/layouts` with `1`  | a second pass over the whole `node` project with `1`    | unset (the twins are also tested in-process)                                                                                                    |
+| `GRAPHTY_DAWN_FEATURES`                   | unset                                                       | unset                                                   | optional Dawn toggles                                                                                                                           |
+| `GRAPHTY_EGL_LIB_DIR` / `LD_LIBRARY_PATH` | --                                                          | unset (the partner image has `libegl1`; verified at G0) | the extracted tree (`docs/HEADLESS_GPU_REPORT.md` appendix D)                                                                                   |
+| `GRAPHTY_RUNNER_CLASS`                    | unset                                                       | `gpu-linux-t4`                                          | unset                                                                                                                                           |
+| `VK_DRIVER_FILES`                         | `/usr/share/vulkan/icd.d/lvp_icd.x86_64.json` (determinism) | unset                                                   | unset                                                                                                                                           |
+| `XDG_RUNTIME_DIR`                         | `/tmp` (silences Mesa)                                      | `/tmp`                                                  | `/tmp`                                                                                                                                          |
+| `CI`                                      | set by GitHub                                               | set by GitHub                                           | unset: the build-output test's bundle assertions hard-fail only under `CI`                                                                      |
 
 The two Chromium flag sets (`BROWSER_FLAGS` in `vitest.config.ts`): `nvidia` = `--enable-unsafe-webgpu
 --enable-features=Vulkan --use-angle=vulkan --disable-vulkan-surface`; `swiftshader` = `--enable-unsafe-webgpu
@@ -285,6 +286,13 @@ and treats exit 124 (the `browser.close()` hang after GPU work on the NVIDIA pat
 the JSON has `numTotalTests > 0 && numFailedTests === 0`. Benchmarks: `benchmarks/results/<runner-class>.json`
 is the checked-in baseline per runner class (`scripts/runner-class.js`: `<vendor>-<architecture>-driver<major>`,
 or `GRAPHTY_RUNNER_CLASS`), `benchmarks/out/` the gitignored run output.
+
+A run whose `GRAPHTY_GPU_REQUIRE` demands an adapter that is absent (or the wrong vendor) fails ONCE, up front, from
+the node project's `globalSetup` (`test/setup/global.ts`) with the reason and the platform hints, instead of in every
+GPU test; the unset policy still skips each GPU test with the printed reason. `.github/workflows/hosts.yml` is the
+informational host matrix (never required): Dawn-node and Chromium on Metal on `macos-latest` (plus a WebKit spike),
+Dawn-node on D3D12 / WARP and Chromium on SwiftShader on `windows-latest` -- the other shader compilers, added after
+the WebKit pipeline-constants finding below.
 
 ## Verified Platform Facts
 

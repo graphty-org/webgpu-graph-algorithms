@@ -9,7 +9,7 @@ import { probeBrowserWebGpu, requestGpuContext } from "../../src/browser/index.j
 import { MAX_WORKGROUPS_PER_DIM } from "../../src/constants.js";
 import { GpuContext } from "../../src/context.js";
 import { isSoftwareAdapter } from "../../src/device/acquire.js";
-import { browserGpu, browserPolicy, requireBrowserGpu } from "../setup/browser.js";
+import { browserExpectsSoftware, browserGpu, browserPolicy, requireBrowserGpu } from "../setup/browser.js";
 
 describe("./browser entry (spec 11.6 item 1)", () => {
     it("probeBrowserWebGpu reports the adapter the flag set selects, with the software flag the policy expects", async (t) => {
@@ -21,11 +21,15 @@ describe("./browser entry (spec 11.6 item 1)", () => {
         if (result.adapter === null || result.summary === null) {
             throw new Error("probe ok but adapter / summary null");
         }
-        const expectedSoftware = browserGpu() === "swiftshader";
+        const expectedSoftware = browserExpectsSoftware();
         expect(result.summary.software).toBe(expectedSoftware);
         expect(isSoftwareAdapter(result.adapter.info)).toBe(expectedSoftware);
         if (browserGpu() === "nvidia") {
             expect(result.summary.vendor).toBe("nvidia");
+            expect(result.adapter.info.isFallbackAdapter).toBe(false);
+        } else if (browserGpu() === "metal") {
+            // The host lane's Metal device (a runner VM's paravirtualised GPU or a real Apple GPU): the vendor string
+            // is whatever the browser reports; the summary is printed by the setup so the run records it.
             expect(result.adapter.info.isFallbackAdapter).toBe(false);
         } else {
             expect(result.summary.vendor).toBe("google");
@@ -43,7 +47,7 @@ describe("./browser entry (spec 11.6 item 1)", () => {
     it("probeBrowserWebGpu({ rejectSoftware: true }) is E_SOFTWARE_ONLY on SwiftShader and OK on NVIDIA, never a throw", async (t) => {
         await requireBrowserGpu(t);
         const result = await probeBrowserWebGpu({ rejectSoftware: true });
-        if (browserGpu() === "swiftshader") {
+        if (browserExpectsSoftware()) {
             expect(result.ok).toBe(false);
             expect(result.code).toBe("E_SOFTWARE_ONLY");
             expect(typeof result.reason).toBe("string");
@@ -64,7 +68,7 @@ describe("./browser entry (spec 11.6 item 1)", () => {
             expect(ctx.caps.runtime).toBe("browser");
             expect(ctx.ownsDevice).toBe(true);
             expect(ctx.label).toBe("entry");
-            expect(ctx.caps.software).toBe(browserGpu() === "swiftshader");
+            expect(ctx.caps.software).toBe(browserExpectsSoftware());
             expect(ctx.caps.limits.maxComputeWorkgroupsPerDimension).toBe(MAX_WORKGROUPS_PER_DIM);
             expect(ctx.workgroupSize).toBeGreaterThanOrEqual(64);
             expect(ctx.residency.stats().buffers).toBe(0);
