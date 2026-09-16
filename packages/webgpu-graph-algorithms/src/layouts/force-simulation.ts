@@ -1750,21 +1750,49 @@ export class ForceSimulation<
         device.queue.submit([encoder.finish()]);
     }
 
-    /** Destroys every simulation buffer through the allocator (the ring lives on until dispose()). */
+    /**
+     * Destroys every simulation buffer through the allocator (the ring lives on until dispose()). While batches are
+     * still in flight the destruction is DEFERRED until their readbacks have settled: the GPU may still be copying
+     * out of `scene` / `state` and Dawn's Metal backend (dawn-node 0.4.0 on macOS) has taken the worker process
+     * down when a buffer with pending work was destroyed (the Vulkan backends defer internally). The simulation
+     * drops its references at once either way, so nothing here is reachable afterwards.
+     */
     private destroyBuffers(): void {
         const { buffers } = this;
         if (buffers === null) {
             return;
         }
-        const { allocator } = this.ctx;
-        for (const buffer of [buffers.positions, buffers.scene, buffers.fixed, buffers.partials, buffers.state]) {
-            allocator.destroy(buffer);
-        }
-        for (const { buffer } of buffers.model.values()) {
-            allocator.destroy(buffer);
-        }
         this.buffers = null;
         this.resources = null;
+        const doomed = [buffers.positions, buffers.scene, buffers.fixed, buffers.partials, buffers.state];
+        for (const { buffer } of buffers.model.values()) {
+            doomed.push(buffer);
+        }
+        this.afterInFlight(() => {
+            const { allocator } = this.ctx;
+            for (const buffer of doomed) {
+                allocator.destroy(buffer);
+            }
+        });
+    }
+
+    /**
+     * Runs `action` now when no submitted batch is in flight, otherwise once every in-flight readback has settled
+     * (resolved, discarded or rejected -- the staging slot is returned and the GPU work is done either way).
+     * @param action - the destruction to run
+     */
+    private afterInFlight(action: () => void): void {
+        const waits: Promise<unknown>[] = [];
+        for (const record of this.pending) {
+            if (record.submitted !== null) {
+                waits.push(record.submitted.readback.catch(() => undefined));
+            }
+        }
+        if (waits.length === 0) {
+            action();
+            return;
+        }
+        void Promise.all(waits).then(action, action);
     }
 
     /**
@@ -2053,7 +2081,9 @@ export class ForceSimulation<
         this.torndown = true;
         this.discardPending();
         this.destroyBuffers();
-        this.ring.destroy();
+        this.afterInFlight(() => {
+            this.ring.destroy();
+        });
         if (this.ctx.state === "ready") {
             this.ctx.pool.trim();
         }
