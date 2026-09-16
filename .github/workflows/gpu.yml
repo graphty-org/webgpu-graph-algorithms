@@ -75,7 +75,40 @@ jobs:
         needs: test-gpu
         if: always() && github.event_name == 'schedule' && needs.test-gpu.result != 'success'
         runs-on: ubuntu-latest
-        permissions: { issues: write }
+        permissions: { issues: write, actions: read }   # actions: read for listWorkflowRuns (the previous night's conclusion)
         steps:
             - uses: actions/github-script@v7
-              with: { script: "/* open or refresh the 'GPU lane nightly' tracking issue; only after two consecutive nightly failures (the previous night's result is read from the issue body), 12.6 */" }
+              with:
+                  script: |
+                      // Open or refresh the "GPU lane nightly" tracking issue, only after two consecutive
+                      // nightly failures (spec 12.6). The previous night's result is read from the workflow
+                      // runs themselves rather than from the issue body: it needs no state to be kept in an
+                      // issue and it is right even when the issue was closed by hand in between.
+                      const { owner, repo } = context.repo;
+                      const title = "GPU lane nightly";
+                      const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+                      const runs = await github.rest.actions.listWorkflowRuns({
+                          owner, repo, workflow_id: "gpu.yml", event: "schedule", per_page: 5,
+                      });
+                      const previous = runs.data.workflow_runs
+                          .filter((r) => r.id !== context.runId && r.status === "completed")
+                          .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+                      const twoInARow = previous !== undefined && previous.conclusion !== "success";
+                      const { data: open } = await github.rest.issues.listForRepo({ owner, repo, state: "open", per_page: 100 });
+                      const existing = open.find((i) => i.title === title);
+                      if (!twoInARow && existing === undefined) {
+                          core.info(`first nightly failure (${runUrl}); no issue yet -- a second consecutive failure opens one`);
+                          return;
+                      }
+                      const line = `- ${new Date().toISOString()}: nightly GPU lane failed: ${runUrl}` +
+                          (previous === undefined ? "" : ` (previous night: ${previous.conclusion}, ${previous.html_url})`);
+                      if (existing !== undefined) {
+                          await github.rest.issues.createComment({ owner, repo, issue_number: existing.number, body: line });
+                          core.info(`refreshed #${existing.number}`);
+                      } else {
+                          const body = "The nightly GPU lane (gpu.yml, the gpu-linux-t4 runner) has failed on two consecutive " +
+                              "nights. Close this issue once a nightly run is green again; the job comments here on " +
+                              "every further failure while it stays open (design/webgpu-acceleration-plan.md 12.6).\n\n" + line;
+                          const created = await github.rest.issues.create({ owner, repo, title, body });
+                          core.info(`opened #${created.data.number}`);
+                      }
