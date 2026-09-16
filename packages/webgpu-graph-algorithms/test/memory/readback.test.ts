@@ -51,6 +51,31 @@ function caught(fn: () => unknown): { code: string; details: Readonly<Record<str
     throw new Error("expected a WebGpuGraphError");
 }
 
+/**
+ * Counts destroy() calls on one buffer through an own-property override (the Dawn-node object model allows it,
+ * CLAUDE.md "Verified Platform Facts"); restore() deletes the override.
+ * @param buffer - the buffer to watch
+ * @returns the counter and its restore
+ */
+function spyDestroy(buffer: GPUBuffer): { count: () => number; restore: () => void } {
+    let calls = 0;
+    const original = buffer.destroy.bind(buffer);
+    Object.defineProperty(buffer, "destroy", {
+        configurable: true,
+        writable: true,
+        value: (): void => {
+            calls += 1;
+            original();
+        },
+    });
+    return {
+        count: (): number => calls,
+        restore: (): void => {
+            Reflect.deleteProperty(buffer, "destroy");
+        },
+    };
+}
+
 describe("Readback", () => {
     it("serves 100 back-to-back read() calls from the default three slots, each into a fresh ArrayBuffer", async (t: TestContext) => {
         requireGpu(t);
@@ -267,6 +292,66 @@ describe("Readback", () => {
                 ring.returnSlot({ index: 0, buffer, capacity: 1024 });
             }).not.toThrow();
             buffer.destroy();
+            await ctx.allocator.check();
+        });
+    });
+
+    it("mapSlot: a slot returned while its map is pending stays borrowed until the map settles, then is unmapped and free", async (t: TestContext) => {
+        requireGpu(t);
+        await withContext(undefined, async (ctx) => {
+            const ring = new Readback(ctx.device, ctx.allocator, { slots: 1, slotBytes: 1024 });
+            const src = uploadBuffer(ctx, pattern(256, 5), "map-slot");
+            const slot = ring.borrowSlot(1024);
+            const encoder = ctx.device.createCommandEncoder({ label: "map-slot" });
+            encoder.copyBufferToBuffer(src, 0, slot.buffer, 0, 1024);
+            ctx.device.queue.submit([encoder.finish()]);
+            const mapped = ring.mapSlot(slot, 1024);
+            expect(caught(() => ring.mapSlot(slot, 1024)).details.argument).toBe("slot"); // one map at a time
+            // the return arrives while the map is pending (it cannot settle before this macrotask ends): deferred
+            ring.returnSlot(slot);
+            expect(ring.borrowed).toBe(1);
+            expect(ring.borrowSlot(1024)).not.toBe(slot); // the ring grows rather than hand out a slot with a map pending
+            expect(ring.slots).toBe(2);
+            await mapped;
+            // the settle unmapped and freed the slot; the second slot is still borrowed
+            expect(ring.borrowed).toBe(1);
+            expect(slot.buffer.mapState ?? "unmapped").toBe("unmapped");
+            const again = ring.borrowSlot(1024);
+            expect(again).toBe(slot);
+            await ring.mapSlot(again, 1024); // a fresh map on the returned slot works
+            expect(new Uint32Array(again.buffer.getMappedRange(0, 1024))[3]).toBe(pattern(256, 5)[3]);
+            ring.returnSlot(again);
+            expect(slot.buffer.mapState ?? "unmapped").toBe("unmapped");
+            ring.destroyAll();
+            src.destroy();
+            await ctx.allocator.check();
+        });
+    });
+
+    it("destroyAll() during a mapSlot map defers the destruction to the settle; the borrower's return is a no-op", async (t: TestContext) => {
+        requireGpu(t);
+        await withContext(undefined, async (ctx) => {
+            const ring = new Readback(ctx.device, ctx.allocator, { slots: 1, slotBytes: 1024 });
+            const src = uploadBuffer(ctx, pattern(256, 6), "map-slot-dispose");
+            const slot = ring.borrowSlot(1024);
+            const encoder = ctx.device.createCommandEncoder({ label: "map-slot-dispose" });
+            encoder.copyBufferToBuffer(src, 0, slot.buffer, 0, 1024);
+            ctx.device.queue.submit([encoder.finish()]);
+            const mapped = ring.mapSlot(slot, 1024);
+            const destroyed = spyDestroy(slot.buffer);
+            ring.destroyAll();
+            expect(destroyed.count()).toBe(0); // not while the map is pending
+            expect(ring.slots).toBe(0);
+            await mapped.then(
+                () => undefined,
+                () => undefined,
+            );
+            expect(destroyed.count()).toBe(1); // the settle destroyed it (whichever way the runtime settled the map)
+            expect(() => {
+                ring.returnSlot(slot);
+            }).not.toThrow();
+            destroyed.restore();
+            src.destroy();
             await ctx.allocator.check();
         });
     });

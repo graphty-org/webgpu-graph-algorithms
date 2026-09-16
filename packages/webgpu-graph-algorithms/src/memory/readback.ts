@@ -3,10 +3,19 @@
  * PLAN DECISION 15) through which every readback of the package flows. `read()` copies with its own encoder and
  * submit, awaits mapAsync, copies out of the mapped range BEFORE unmap (the range is detached at unmap, design 10.7)
  * and never polls onSubmittedWorkDone; requests above the slot size are chunked. Ownership is one-directional: the
- * ring owns its buffers; a CommandBatch (P2) BORROWS one slot through borrowSlot and always returns it through
- * returnSlot, which unmaps it. Slots at or above OOM_SCOPE_THRESHOLD_BYTES are created through the AllocationTracker
- * (the out-of-memory scope of spec 5.7), the default-size ones directly on the device, so the allocator counts
- * residency and pool buffers only. A mapAsync rejection is E_DEVICE_LOST (or E_DISPOSED after destroyAll).
+ * ring owns its buffers; a CommandBatch (P2) BORROWS one slot through borrowSlot, maps it through mapSlot and always
+ * returns it through returnSlot, which unmaps it. Slots at or above OOM_SCOPE_THRESHOLD_BYTES are created through the
+ * AllocationTracker (the out-of-memory scope of spec 5.7), the default-size ones directly on the device, so the
+ * allocator counts residency and pool buffers only. A mapAsync rejection is E_DEVICE_LOST (or E_DISPOSED after
+ * destroyAll).
+ *
+ * The one invariant every path keeps: a staging buffer whose mapAsync is PENDING is never unmapped and never
+ * destroyed. dawn-node 0.4.0 settles the pending promise synchronously on unmap() / destroy() and settles it a
+ * second time when Dawn's map callback arrives (a SIGSEGV in AsyncRunner::Reject); on the Vulkan backends the
+ * callback has already run inside device.destroy(), on Dawn's Metal backend it arrives after the device-lost
+ * fan-out, which is where the macOS host lane lost its vitest worker (CLAUDE.md "Verified Platform Facts"). The
+ * ring therefore tracks every map on its slots (mapPending) and defers an unmap, a return or a destroy that
+ * arrives during one to the moment the map settles.
  */
 
 import { DEFAULT_STAGING_SLOTS, OOM_SCOPE_THRESHOLD_BYTES } from "../constants.js";
@@ -38,10 +47,12 @@ export interface StagingSlot {
 interface SlotEntry {
     readonly slot: StagingSlot;
     borrowed: boolean;
-    /** True between the ring's own successful mapAsync and the unmap of returnSlot (a fallback when mapState is absent). */
+    /** True between a successful mapAsync through the ring and the unmap of returnSlot (a fallback when mapState is absent). */
     mapped: boolean;
-    /** True while the ring's own mapAsync is pending: destroyAll() defers the buffer's destruction until it settles. */
+    /** True while a mapAsync through the ring (read() or mapSlot) is pending: returnSlot and destroyAll defer to the settle. */
     mapPending: boolean;
+    /** True when returnSlot ran during a pending map: the settle finishes the return. */
+    returnRequested: boolean;
     /** True when the buffer was created through the allocator (and is destroyed through it). */
     readonly tracked: boolean;
 }
@@ -202,27 +213,104 @@ export class Readback {
     }
 
     /**
-     * Returns a borrowed slot (unmapping it if mapped or pending). `mapState` decides when the runtime exposes it;
-     * otherwise the ring's own record of its mapAsync calls does (a borrower that maps a slot itself must unmap it
-     * before returning it, spec 4.4). A no-op after destroyAll() (the ring is gone; a borrower's finally must never
-     * mask the E_DISPOSED / E_DEVICE_LOST of the read it was serving).
+     * mapAsync(READ) on a borrowed slot, tracked by the ring: the slot counts as borrowed, and is neither unmapped
+     * nor destroyed, until the map settles (see the file comment). Returns the runtime's own promise, untranslated:
+     * the borrower classifies a rejection (a CommandBatch races it against device loss, spec 5.7).
+     * @param slot - a slot borrowed from this ring and not yet returned
+     * @param byteLength - the bytes to map from offset 0
+     * @returns the mapAsync promise
+     */
+    mapSlot(slot: StagingSlot, byteLength: number): Promise<void> {
+        this.assertLive();
+        const entry = this.borrowedEntry(slot);
+        if (entry.mapPending || entry.mapped) {
+            throw invalid("slot", slot.index, "a borrowed slot that is not mapped and has no map pending");
+        }
+        return this.track(entry, slot.buffer.mapAsync(MapMode.READ, 0, byteLength));
+    }
+
+    /**
+     * Returns a borrowed slot (unmapping it if mapped). A slot whose map through the ring is still pending stays
+     * borrowed until the map settles, when the ring unmaps and returns it; a borrower that maps a slot itself must
+     * unmap it before returning it (spec 4.4; `mapState` decides when the runtime exposes it, otherwise the ring's
+     * own record does). A no-op after destroyAll() (the ring is gone; a borrower's finally must never mask the
+     * E_DISPOSED / E_DEVICE_LOST of the read it was serving).
      * @param slot - a slot borrowed from this ring and not yet returned
      */
     returnSlot(slot: StagingSlot): void {
         if (this.disposed) {
             return;
         }
+        const entry = this.borrowedEntry(slot);
+        if (entry.mapPending) {
+            entry.returnRequested = true;
+            return;
+        }
+        this.finishReturn(entry);
+    }
+
+    /**
+     * The entry of a slot borrowed from this ring and not yet returned.
+     * @param slot - the slot
+     * @returns its entry
+     */
+    private borrowedEntry(slot: StagingSlot): SlotEntry {
         const entry = this.ring[slot.index];
         if (entry === undefined || entry.slot !== slot || !entry.borrowed) {
             throw invalid("slot", slot.index, "a slot borrowed from this ring and not yet returned");
         }
-        const state: string | undefined = slot.buffer.mapState;
+        return entry;
+    }
+
+    /**
+     * Unmaps a returned slot when it is mapped and frees it.
+     * @param entry - the slot's entry (no map pending)
+     */
+    private finishReturn(entry: SlotEntry): void {
+        const state: string | undefined = entry.slot.buffer.mapState;
         const mapped = state === undefined ? entry.mapped : state !== "unmapped";
         if (mapped) {
-            slot.buffer.unmap();
+            entry.slot.buffer.unmap();
         }
         entry.mapped = false;
         entry.borrowed = false;
+        entry.returnRequested = false;
+    }
+
+    /**
+     * Tracks one mapAsync on a slot: mapPending until it settles, then the deferred work -- the destruction
+     * destroyAll() left to the settle, or the return returnSlot() left to it. The handler is attached before the
+     * promise is handed out, so it runs before any borrower's continuation.
+     * @param entry - the slot's entry
+     * @param pending - the runtime's mapAsync promise
+     * @returns the same promise
+     */
+    private track(entry: SlotEntry, pending: Promise<void>): Promise<void> {
+        entry.mapPending = true;
+        const settle = (mapped: boolean): void => {
+            entry.mapPending = false;
+            entry.mapped = mapped;
+            if (this.disposed) {
+                if (mapped) {
+                    entry.slot.buffer.unmap();
+                }
+                this.destroySlot(entry);
+                entry.mapped = false;
+                return;
+            }
+            if (entry.returnRequested) {
+                this.finishReturn(entry);
+            }
+        };
+        void pending.then(
+            () => {
+                settle(true);
+            },
+            () => {
+                settle(false);
+            },
+        );
+        return pending;
     }
 
     /**
@@ -249,9 +337,9 @@ export class Readback {
 
     /**
      * Destroys every staging buffer (ctx.dispose()); idempotent. A slot whose mapAsync is still pending is NOT
-     * destroyed here: Dawn's Metal backend (dawn-node 0.4.0 on macOS) crashes the process when a buffer is destroyed
-     * with a map in flight, so its destruction is deferred to the moment the map settles (map() below), where the
-     * pending read still rejects with E_DISPOSED as the contract promises. Vulkan backends tolerate either order.
+     * destroyed here (the file comment: dawn-node 0.4.0 settles the promise twice); its destruction is deferred to
+     * the moment the map settles (track()), where a pending read() still rejects with E_DISPOSED as the contract
+     * promises.
      * @internal
      */
     destroyAll(): void {
@@ -296,6 +384,7 @@ export class Readback {
             borrowed: false,
             mapped: false,
             mapPending: false,
+            returnRequested: false,
             tracked,
         };
         this.ring.push(entry);
@@ -303,28 +392,21 @@ export class Readback {
     }
 
     /**
-     * mapAsync(READ) on a slot; a rejection becomes E_DISPOSED (after destroyAll) or E_DEVICE_LOST.
+     * mapAsync(READ) on a slot for read(); a rejection becomes E_DISPOSED (after destroyAll) or E_DEVICE_LOST.
      * @param entry - the ring entry of the borrowed slot
      * @param byteLength - the bytes to map
      */
     private async map(entry: SlotEntry, byteLength: number): Promise<void> {
-        entry.mapPending = true;
         let mapped = false;
         let failure: unknown = null;
         try {
-            await entry.slot.buffer.mapAsync(MapMode.READ, 0, byteLength);
+            await this.track(entry, entry.slot.buffer.mapAsync(MapMode.READ, 0, byteLength));
             mapped = true;
         } catch (err: unknown) {
             failure = err;
-        } finally {
-            entry.mapPending = false;
         }
         if (this.disposed) {
-            // destroyAll() ran while the map was pending (see its note): finish the deferred destruction here.
-            if (mapped) {
-                entry.slot.buffer.unmap();
-            }
-            this.destroySlot(entry);
+            // destroyAll() ran while the map was pending: track() finished the deferred destruction just before this
             throw new WebGpuGraphError("E_DISPOSED", "the readback ring was disposed while a read was pending", {
                 label: "readback",
             });
@@ -336,7 +418,6 @@ export class Readback {
                 message,
             });
         }
-        entry.mapped = true;
     }
 
     /** Throws E_DISPOSED after destroyAll(). */

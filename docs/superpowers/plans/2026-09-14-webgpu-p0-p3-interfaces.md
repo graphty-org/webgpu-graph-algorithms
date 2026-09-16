@@ -2054,7 +2054,9 @@ export class Readback {
     readU32(src: GPUBuffer, byteOffset: number): Promise<number>;
     /** Borrows an unmapped slot of at least byteLength (grows the ring when none is free); the borrower ALWAYS returns it (spec 4.4). */
     borrowSlot(byteLength: number): StagingSlot;
-    /** Returns a borrowed slot (unmapping it if mapped). */
+    /** mapAsync(READ) on a borrowed slot, tracked by the ring (CONTRACT DECISION RB-1 below); returns the runtime's promise untranslated. */
+    mapSlot(slot: StagingSlot, byteLength: number): Promise<void>;
+    /** Returns a borrowed slot (unmapping it if mapped); a slot whose map through the ring is pending stays borrowed until the map settles, when the ring unmaps and frees it. */
     returnSlot(slot: StagingSlot): void;
     /** Number of slots (grows). */
     readonly slots: number;
@@ -2065,7 +2067,9 @@ export class Readback {
 }
 ```
 
-Throws: `E_DEVICE_LOST` (mapAsync rejected after loss), `E_DISPOSED`, `E_INVALID_ARGUMENT` (byteLength 0 or not a multiple of 4; a dest too small).
+Throws: `E_DEVICE_LOST` (mapAsync rejected after loss), `E_DISPOSED`, `E_INVALID_ARGUMENT` (byteLength 0 or not a multiple of 4; a dest too small; `mapSlot` on a slot not borrowed, already mapped or with a map pending).
+
+CONTRACT DECISION RB-1 (2026-09-16, the macOS host lane): a staging buffer whose mapAsync is PENDING is never unmapped and never destroyed. dawn-node 0.4.0 settles the pending promise synchronously on `unmap()` / `destroy()` (`GPUBuffer::DetachMappings`) and again when Dawn's map callback arrives (`AsyncRunner::Reject` on a concluded N-API deferred: SIGSEGV, the crash report of hosts.yml run 35135772420); on the Vulkan backends the callback has already run inside `device.destroy()`, on Dawn's Metal backend it arrives after the device-lost fan-out. So every map on a slot goes through the ring (`read()` and `mapSlot`), which records it as pending and defers a `returnSlot` (the slot stays borrowed) or a `destroyAll` (the slot is destroyed at the settle; a pending `read()` still rejects `E_DISPOSED`) that arrives during it. `CommandBatch.awaitReadback` maps through `mapSlot`, and when device loss wins its race against the map it lets the map settle (bounded by `LOSS_GRACE_MS`, for a runtime that never settles it) before returning the slot -- the readback still rejects `E_DEVICE_LOST`, one macrotask later on dawn-node.
 
 #### src/memory/lease.ts -- P2-T1 (spec 4.4)
 

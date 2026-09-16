@@ -12,19 +12,39 @@
  * stale). In browsers delivery is asynchronous: the batch takes the slot again after its map completes,
  * and whatever arrives later is thrown by the context's next public call. Device loss is raced against
  * the map, so a readback rejects E_DEVICE_LOST whether the runtime rejects, resolves or never settles
- * the pending map of a destroyed buffer.
+ * the pending map of a destroyed buffer; the slot goes back only once the map has settled (or the grace
+ * ran out), because a staging buffer is never unmapped while its map is pending (readback.ts).
  */
 
 import type { AllocationTracker } from "../device/error-scope.js";
 import { deviceLostError } from "../device/lost.js";
-import { MapMode } from "../device/webgpu-constants.js";
 import { isWebGpuGraphError, WebGpuGraphError } from "../errors.js";
 import type { Readback, StagingSlot } from "../memory/readback.js";
 import type { Binding } from "../types/memory.js";
 import type { Profiler } from "./profiler.js";
 
-/** How long a batch waits for the context's loss fan-out after its map rejected with a foreign error (a destroyed buffer rejects before device.lost settles). */
+/** How long a batch waits for the context's loss fan-out after its map rejected with a foreign error (a destroyed buffer rejects before device.lost settles), and for the runtime to settle a pending map after the loss won the race. */
 const LOSS_GRACE_MS = 2000;
+
+/**
+ * Resolves when the promise settles either way, or after the grace (a runtime that never settles a pending map).
+ * @param pending - the promise
+ * @param graceMs - the ceiling
+ */
+async function settled(pending: Promise<unknown>, graceMs: number): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const grace = new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, graceMs);
+    });
+    await Promise.race([
+        pending.then(
+            () => undefined,
+            () => undefined,
+        ),
+        grace,
+    ]);
+    clearTimeout(timer);
+}
 
 /**
  * A plain message for a thrown value (the house pattern of graph-io's report.ts).
@@ -271,7 +291,7 @@ export class CommandBatch {
             });
         });
         void lost.catch(() => undefined);
-        const mapped = slot.buffer.mapAsync(MapMode.READ, 0, total);
+        const mapped = this.host.readback.mapSlot(slot, total);
         void mapped.catch(() => undefined);
         let bytes: ArrayBuffer;
         try {
@@ -279,6 +299,8 @@ export class CommandBatch {
             this.host.assertReady();
             bytes = state.discarded ? new ArrayBuffer(0) : slot.buffer.getMappedRange(0, total).slice(0);
         } catch (error) {
+            // the loss may have won the race: let the runtime settle the map before the slot is unmapped and returned
+            await settled(mapped, LOSS_GRACE_MS);
             this.releaseSlot();
             throw await this.classify(error, lost);
         } finally {
