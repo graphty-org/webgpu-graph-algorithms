@@ -25,7 +25,21 @@ jobs:
               with: { node-version: 22.x, cache: pnpm, cache-dependency-path: packages/pnpm-lock.yaml }
             - run: pnpm install --frozen-lockfile
             - name: Install Mesa lavapipe (software Vulkan ICD for Dawn-in-Node; not preinstalled on ubuntu-24.04)
-              run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
+              run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1 vulkan-tools
+            - name: Locate the lavapipe ICD (its path moved between Mesa releases; the first run on noble-updates 25.2 found no file at the 12.2 path)
+              id: icd
+              run: |
+                  ls -la /usr/share/vulkan/icd.d /etc/vulkan/icd.d /usr/lib/x86_64-linux-gnu/vulkan/icd.d 2>/dev/null || true
+                  icd=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json /etc/vulkan/icd.d/lvp_icd*.json /usr/lib/x86_64-linux-gnu/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+                  if [ -z "$icd" ]; then
+                      echo "::error::no lavapipe ICD json after installing mesa-vulkan-drivers; the package's files:"
+                      dpkg -L mesa-vulkan-drivers | grep -i 'json\|lvp\|lavapipe' || true
+                      apt-cache search --names-only 'lvp\|lavapipe\|mesa-vulkan' || true
+                      exit 1
+                  fi
+                  echo "lavapipe ICD: $icd"
+                  VK_DRIVER_FILES="$icd" vulkaninfo --summary 2>/dev/null | head -40 || true
+                  echo "icd=$icd" >> "$GITHUB_OUTPUT"
             - run: pnpm run build                    # = pnpm -r run build:all (tsc + the vite bundle): dist/browser.js, dist/node.js and their d.ts shims exist only after the bundle step (2.5)
             - run: pnpm -r run lint                  # eslint + tsc --noEmit + the strict-consumer compile (3.1)
             - run: pnpm exec knip
@@ -34,7 +48,7 @@ jobs:
               env:
                   GRAPHTY_GPU_ADAPTER: llvmpipe
                   GRAPHTY_GPU_REQUIRE: any
-                  VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+                  VK_DRIVER_FILES: ${{ steps.icd.outputs.icd }}
                   XDG_RUNTIME_DIR: /tmp
               run: |
                   pnpm exec vitest run --project=node --coverage
