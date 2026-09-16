@@ -30,7 +30,8 @@ jobs:
               id: icd
               run: |
                   ls -la /usr/share/vulkan/icd.d /etc/vulkan/icd.d /usr/lib/x86_64-linux-gnu/vulkan/icd.d 2>/dev/null || true
-                  icd=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json /etc/vulkan/icd.d/lvp_icd*.json /usr/lib/x86_64-linux-gnu/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+                  # find, not ls with globs: an unmatched glob makes ls exit 2, which aborts the step under bash -e -o pipefail
+                  icd=$(find /usr/share/vulkan/icd.d /etc/vulkan/icd.d /usr/lib/x86_64-linux-gnu/vulkan/icd.d -name 'lvp_icd*.json' 2>/dev/null | sort | head -1 || true)
                   if [ -z "$icd" ]; then
                       echo "::error::no lavapipe ICD json after installing mesa-vulkan-drivers; the package's files:"
                       dpkg -L mesa-vulkan-drivers | grep -i 'json\|lvp\|lavapipe' || true
