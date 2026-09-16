@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-speed-finalize",
+    "fixture": "random1k-K4",
+    "adapterClass": "mesa-software-node",
+    "dtype": "f32",
+    "values": [1.5, 1.2999999523162842, 450505280, 225252640]
+}

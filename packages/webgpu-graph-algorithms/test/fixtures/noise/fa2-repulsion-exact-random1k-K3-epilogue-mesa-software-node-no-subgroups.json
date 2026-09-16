@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-repulsion-exact",
+    "fixture": "random1k-K3-epilogue",
+    "adapterClass": "mesa-software-node-no-subgroups",
+    "dtype": "f32",
+    "values": [450505272, 225252636]
+}

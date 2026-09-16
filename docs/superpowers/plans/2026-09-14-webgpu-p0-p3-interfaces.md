@@ -2130,6 +2130,8 @@ export interface ComposedModule {
     readonly code: string;
     readonly bodyLine: number;
     readonly overrides: Readonly<Record<string, number | boolean>>;
+    /** CONTRACT DECISION (2026-09-16, demo on an iPad): the subset of `overrides` the code references outside comments and its own `override` lines -- what PipelineCache supplies as the pipeline `constants`. WebKit fails "Compute library failed creation" for a constant naming an unread override (HAS_WEIGHTS in degree, TIER in the thread-per-row tiers); the spec allows it ("not required to be statically used"), Dawn tolerates it. The cache key keeps `overrides`. */
+    readonly constants: Readonly<Record<string, number | boolean>>;
     readonly entryPoint: string;
     readonly subgroups: boolean;
 }
@@ -3669,7 +3671,7 @@ fn speed_finalize(@builtin(local_invocation_id) lid: vec3<u32>) {
         let other = min(maxJitter, optJitter * traction / (n * n));
         var jitter = P.jitterTolerance * max(minJitter, other);
         var eff = S.speedEfficiency;
-        if (swing / tr > 2.0) {
+        if (swing > 2.0 * tr) {                                                      // swing / traction > 2 in the exact form (CONTRACT DECISION K4-1 below: 2 x is exact, a WGSL f32 division is not)
             if (eff > 0.05) { eff = eff * 0.5; }                                     // the CPU's conditional multiply (7.2)
             jitter = max(jitter, P.jitterTolerance);
         }
@@ -3690,6 +3692,26 @@ fn speed_finalize(@builtin(local_invocation_id) lid: vec3<u32>) {
     }
 }
 ```
+
+CONTRACT DECISION K4-1 (P3-T5 / G3 finding G3-F6; spec 7.10 snippet line
+`if (swing / tr > 2.0)`): the halving predicate is written in its exact form
+`swing > 2.0 * tr` (the same truth value as the port's `swing / traction >
+2` for every `tr > 0`, and `tr = max(traction, 1e-30) > 0`). Reason: every
+paper-mode first iteration after `load()` runs with `oldForce = 0`, so
+`traction_i = 0.5 m_i |F_i|` is EXACTLY half of `swing_i = m_i |F_i|` per node
+and, since a scaling by a power of two commutes with f32 rounding, the folded
+`traction` is exactly half the folded `swing`: the predicate sits on its
+knife edge at the start of every layout. A multiplication by 2 and the
+comparison are exact on every device; WGSL (and Vulkan) grant f32 division
+2.5 ULP, and Dawn on the RTX 4070 SUPER returns `2 + 1 ulp` for 2.2% of the
+exact-ratio inputs `x / (x / 2)` (`tmp/p3-fix/div-probe.mjs`: 5,028 of 32,768
+not exactly 2, 709 above; 27% of random quotients 1 ulp off; lavapipe exact),
+which halves `speedEfficiency` at iteration 0 where the CPU reference never
+does -- the multi-state twin comparison of `test/layouts/fa2-twins.test.ts`
+caught it (the two twins, same device, disagreeing by the branch from the
+same positions). The oracle (5.3, `estimateFactor`) uses the same exact form;
+the owner amends the 7.10 snippet in the spec's Review log (section 9 item
+10).
 
 #### fa2-integrate.wgsl.ts (K5; `fa2IntegrateWgsl`, entry `integrate`; spec 7.11)
 
@@ -4290,15 +4312,15 @@ P3:
 | `test/oracle/forceatlas2-networkx.test.ts` | P3-T4 | the oracle in compat "networkx" (gravityCenter 1, f64) reproduces every committed fixture: 1e-9 at 1 and 5 iterations, 1e-6 at 50, raw positions; the iteration-0 FORCES of compat "paper" equal the networkx run's (same laws) on every fixture; the fixtures' preconditions (no pair under 0.01, no node under 0.01 of the origin along the trajectory) hold in the oracle's run |
 | `test/oracle/swing-mode.test.ts` | P3-T4 | on a three-node path with hand-computed forces: paper-mode per-node swing / traction (force form, fixed node excluded), networkx-mode (position-mixed, accumulated from 1, every node), the local factor in both modes (m|F - Fold| vs m|F|), and estimateFactor's outputs for two iterations, all against hand-written numbers in the test |
 | `test/layouts/fa2-force-parity.test.ts` | P3-T5 | one iteration K2 + K3: `force` via inspect() vs the f64 oracle's `force` stage with the floored denominator at 1e-4 (DEPARTURE-6) on karate, grid10, star200, random1k x { weights, linlog, distributed, strong, gravity 0, nodeMass F32, 2D / 3D, compat paper / networkx, one pinned node }; tolerance traced to noise-floor.json |
-| `test/layouts/fa2-trace-parity.test.ts` | P3-T5 | 50 x step(1): the trace vs the f32 oracle within 1e-4 for the first 10 iterations and vs the f64 oracle within 5e-2 through 50, on 10-1,000-node graphs; tolerances traced |
-| `test/layouts/fa2-distributional.test.ts` | P3-T5 | same seed, 100 iterations: layoutMetrics of GPU vs the f64 oracle within 10% (coordinates never compared) |
+| `test/layouts/fa2-trace-parity.test.ts` | P3-T5 | 50 x step(1) on 10-1,000-node graphs in both modes, twice bitwise; CONTRACT DECISION (P3-T5 PLAN DECISION 17; G3.md G3-F3): in BOTH modes the RE-SYNCHRONISED legs -- a fresh f32 and a fresh f64 oracle seeded with the GPU's iteration-start state before every iteration (`ForceAtlas2Oracle.resync()`), K4's controller fields and K1's fold of the same iteration within `fa2-trace-parity.resync.f32` / `.resync.f64` (cap 1e-4 each) -- and the free-running legs of spec 11.4 (the trace vs the f32 oracle within 1e-4 for the first 10 iterations, vs the f64 oracle within 5e-2 through 50) asserted in `compat: "networkx"` and printed in `compat: "paper"`, whose free-running trajectory is chaotic beyond any derivable tolerance (the f64 oracle misses both caps against itself under a one-ulp start perturbation); tolerances traced |
+| `test/layouts/fa2-distributional.test.ts` | P3-T5 | same seed, 100 iterations: layoutMetrics of GPU vs the f64 oracle within 10% (coordinates never compared) on the cases whose metrics the f64 oracle reproduces within a third of the cap under one-ulp start perturbations (CONTRACT DECISION, P3-T5 PLAN DECISION 18; G3.md G3-F4: the 10 x 10 grid and the paper-mode isolated fixture land in different basins run to run and are not cases) |
 | `test/layouts/fa2-behaviour.test.ts` | P3-T5 | the behaviour pins of 11.4: empty graph (load + step resolve, no GPU work), single node, disconnected components separated by > 0.03 after 100 iterations, maxIter respected, completeGraph(6) spread > 0.3, same seed -> bitwise same layout on the same device, different seeds differ; z === center.z in 2D whatever z was uploaded |
-| `test/layouts/fa2-properties.test.ts` | P3-T5 | fast-check (numRuns 200): fixed nodes never move (random setFixed between steps incl. the all-fixed mask, which settles within settleWindow steps); setPosition visible in the next readback and never clobbered by an older batch; settled within maxIter; reheat on unpin / setPosition / load, not on pin; speed NOT reset by setPosition; pin A, remove B < A, load(next) with the remapped array and a re-issued mask -> A still fixed; results ArrayBuffer-typed of exact length; per-node displacement <= speed |F| / (1 + sqrt(speed swing_i)) |
+| `test/layouts/fa2-properties.test.ts` | P3-T5 | fast-check (numRuns 200): fixed nodes never move (random setFixed between steps incl. the all-fixed mask, which settles within settleWindow steps); setPosition visible in the next readback and never clobbered by an older batch; settled within maxIter; reheat on unpin / setPosition / load, not on pin; speed NOT reset by setPosition (D8: untouched at the call, and the next iteration continues from it -- proved through the re-synchronised oracle, P3-T5 PLAN DECISIONS 13 / 17); pin A, remove B < A, load(next) with the remapped array and a re-issued mask -> A still fixed; results ArrayBuffer-typed of exact length; per-node displacement <= speed |F| / (1 + sqrt(speed swing_i)) |
 | `test/layouts/fa2-force-sum.test.ts` | P3-T5 | gravity 0 and distributedAction false: after one iteration |sum_i F_i| <= 1e-4 sum_i |F_i| on every fixture incl. "coincident" |
-| `test/layouts/fa2-twins.test.ts` | P3-T5 | K1 / K3 / K4 / K5 with and without subgroups in-process: forces and the trace within 1e-6 relative |
+| `test/layouts/fa2-twins.test.ts` | P3-T5 | K1 / K3 / K4 / K5 with and without subgroups in-process: every stage's output of one iteration, and one iteration from each of ten oracle-trajectory states, within the traced twin tolerances (1e-6 relative for the trace record); the workgroup twin's 50-iteration trajectory against the re-synchronised oracles; the free-running 10-iteration trace within 1e-6 in `compat: "networkx"`, printed in `compat: "paper"` (CONTRACT DECISION, P3-T5 PLAN DECISION 17) |
 | `test/layouts/fa2-lifecycle.test.ts` | P3-T5 | dispose leak 0; release(snapshot) during a live simulation -> the next step rejects E_RELEASED; residency.stats().snapshots === 1 after load + release of a previous snapshot; device loss mid-run |
 | `test/layouts/fa2-inspect.test.ts` | P3-T5 | debugRunStages("K2") then inspect("force") equals the oracle's attraction stage; after "K3" the force stage and the partials' swing / traction; after "K4" the state's controller fields; after "K5" positions, partials A / C; after "toScene" scenePositions; each at the traced tolerance |
-| `test/sabotage/fa2.test.ts` | P3-T5 | SABOTAGE["fa2-stats-finalize"] (settledCount never reset; centroid / n -> / (n - 1); rmsRadius without the sqrt), SABOTAGE["fa2-attraction"] (the self-loop `continue` removed on the self-loop fixture; `d * mag` -> `-d * mag`; LINLOG select arguments swapped), SABOTAGE["fa2-integrate"] (dp clamp inserted; `store_old` skipped; 2D z integrated), plus the P1 K3 / K4 mutations against the P3 parity tests: each fails its named test by >= minFactor x the tolerance |
+| `test/sabotage/fa2.test.ts` | P3-T5 | SABOTAGE["fa2-stats-finalize"] (settledCount never reset; centroid / n -> / (n - 1); rmsRadius without the sqrt), SABOTAGE["fa2-attraction"] (the self-loop `continue` removed on the self-loop fixture; `d * mag` -> `-d * mag`; LINLOG select arguments swapped), SABOTAGE["fa2-integrate"] (dp clamp inserted; `store_old` skipped; 2D z integrated), plus the P1 K3 / K4 mutations against the P3 parity tests (the trace check being the re-synchronised legs of fa2-trace-parity.test.ts over 50 iterations, PLAN DECISION 17): each fails its named test by >= minFactor x the tolerance |
 | `test/layouts/frame-loop.test.ts` | P3-T6 | runFrameLoop 600 ticks on random1k: submissions <= ticks, maxObservedInFlight <= maxInFlight, iterationsDone monotone, every positionHolds true, settledAtTick non-null; the pause variant: exactly the in-flight batches land, submissionsDuringPause 0, flush() resolves, the later step continues (iterationsDone and the speed trace continuous) |
 | `test/browser/forceatlas2.test.ts` | P3-T6 | smoke (3): 500-node graph, load, step(10) x 5 with maxInFlight 2, positions written back, setPosition / setFixed honoured, dispose clean; plus the frame-loop test |
 | `test/browser/bench.test.ts` | P3-T6 | `bench`-tagged, skipped unless GRAPHTY_BROWSER_GPU === "nvidia": 10k exact-tier step(1) + readback timings appended through commands.appendBenchRecord (T-5 at 10k; 100k is P4) |
@@ -4772,3 +4794,11 @@ file.
    needed, listed because an earlier draft of this contract used the
    bounding-box corner radius and the oracle's trace record gained
    `layoutRadius` (5.3).
+10. Spec 7.10 snippet line `if (swing / tr > 2.0)` (Review-log amendment;
+    CONTRACT DECISION K4-1 in 4.5): the K4 body and the oracle write the
+    halving predicate as `swing > 2.0 * tr`, its exact form, because the
+    paper-mode first iteration always has `traction` exactly half the
+    `swing` and a 2.5-ULP f32 division decides the branch by device
+    (`docs/decisions/G3.md` finding G3-F6). The owner amends the snippet
+    (and the "line-for-line port" wording, which now holds up to this one
+    algebraic rewrite) or re-decides.

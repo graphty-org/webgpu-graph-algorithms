@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-repulsion-exact",
+    "fixture": "random1k-K3-epilogue",
+    "adapterClass": "oracle-f64",
+    "dtype": "f32",
+    "values": [450505287.3851937, 225252643.69259685]
+}

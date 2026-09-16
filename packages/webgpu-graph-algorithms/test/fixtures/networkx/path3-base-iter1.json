@@ -1,0 +1,31 @@
+{
+    "generator": "test/fixtures/networkx/generate.py",
+    "networkxVersion": "3.4.2",
+    "pythonVersion": "3.10.12",
+    "command": "python generate.py --out test/fixtures/networkx/ --iters 1 5 50 --seed 7",
+    "sensitivity": 1.4990554047290409e-16,
+    "graph": { "name": "path3", "directed": false, "nodeCount": 3, "src": [0, 1], "dst": [1, 2], "weights": null },
+    "options": {
+        "max_iter": 1,
+        "jitter_tolerance": 1.0,
+        "scaling_ratio": 2.0,
+        "gravity": 1.0,
+        "distributed_action": false,
+        "strong_gravity": false,
+        "linlog": false,
+        "dissuade_hubs": false,
+        "weight": null,
+        "dim": 2
+    },
+    "initialPositions": [
+        [-1.0, 0.0],
+        [0.0, 1.0],
+        [1.0, 0.0]
+    ],
+    "positions": [
+        [-1.4812301414914453, -0.3437358153510323],
+        [0.0, 1.450689417816938],
+        [1.4812301414914453, -0.3437358153510323]
+    ],
+    "rescaled": false
+}

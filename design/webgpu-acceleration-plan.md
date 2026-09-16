@@ -4701,3 +4701,44 @@ P0-P3 implement:
    `degreeOrder()` row permutation with `rowPtr` as the dummy. The contract
    follows the majority (`USE_PERM` / `perm` = the row permutation; the arc
    guard of P7+ is the reserved `USE_ARC_PERM`).
+
+P3 gate findings (2026-09-16, `packages/webgpu-graph-algorithms/docs/decisions/G3.md`
+section 10), PENDING the owner's confirmation; until then the G3 record's
+reading is what the code and tests implement:
+
+5. 7.10 `fa2-speed-finalize` snippet, the halving predicate (G3-F6, CONTRACT
+   DECISION K4-1): `swing / tr > 2.0` is written `swing > 2.0 * tr` in the
+   kernel AND in the oracle's `estimateFactor`. Right after `load()`
+   `oldForce = 0`, so traction is exactly half of swing and the predicate
+   sits on its knife edge; NVIDIA's f32 shader division is not correctly
+   rounded (`x / (x / 2) != 2` for 15% of inputs, 2.2% above 2; lavapipe is
+   exact), so ~2% of paper-mode first iterations halved the efficiency where
+   the CPU reference never does and the two subgroup twins disagreed by
+   exactly 2x. The multiplication form is exact in every implementation; the
+   CPU port's `swing / traction > 2` is unaffected in f64.
+6. 11.4 "Trace parity" and 11.3 "Subgroup variants" (G3-F3, G3-F4): the
+   free-running 10- and 50-iteration comparisons cannot be held to 1e-4 /
+   5e-2 in `compat: "paper"` on ANY pair of implementations -- the per-node
+   swing `m |F(t) - F(t-1)|` cancels near equilibrium and the error grows
+   x1.1-1.5 per iteration, so the f64 oracle misses both caps against ITSELF
+   under a one-ulp start perturbation (0.86-1.71 through 50 iterations), and
+   a seed sweep shows the same for `networkx` mode at 50 iterations (7 of 8
+   karate seeds over 5e-2). A re-synchronised comparison (a fresh oracle
+   seeded with the GPU's iteration-start state for ONE iteration, over 50
+   iterations, both modes, both oracles) agrees at 1e-7..1e-5 on every
+   fixture with zero controller-branch mismatches, which is what the tests
+   now assert (tolerances derived from measured floors: f32 6.8e-5, f64
+   1e-4; the twins' re-synchronised trace at 1e-6); the free-running legs
+   stay asserted only for `networkx` mode over the first 10 iterations at
+   the derived 2.1e-5 (seed 7; seed-bound on NVIDIA -- owner item G3-F3 (2))
+   and are printed otherwise. The sabotage rows of K1-K5 fail the
+   re-synchronised assertions by >= 1.2e3x. The distributional cases of 11.4
+   are re-selected on the same basis (the f64 oracle against itself under
+   one-ulp perturbations): grid10 / paper, karate / networkx 2D and the
+   isolated-node fixture in paper mode land in different basins (0.16-0.22)
+   and are dropped; eight stable cases stay at 10%.
+7. 11.3 "Property" row "speed NOT reset by setPosition": restated as D8
+   promises it -- `state.speed` / `speedEfficiency` untouched at the moment of
+   the call, the next iteration continuing from them (checked through the
+   re-synchronised oracle over 200 drags) -- instead of comparing across a
+   batch that legitimately ran.

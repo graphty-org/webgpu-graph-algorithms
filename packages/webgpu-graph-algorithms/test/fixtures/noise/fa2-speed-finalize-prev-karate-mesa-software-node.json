@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-speed-finalize",
+    "fixture": "prev-karate",
+    "adapterClass": "mesa-software-node",
+    "dtype": "f32",
+    "values": [549385.5625, 91564.25, 0.4166666269302368, 0.3499999940395355]
+}

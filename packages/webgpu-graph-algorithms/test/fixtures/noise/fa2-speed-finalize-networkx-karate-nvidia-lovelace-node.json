@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-speed-finalize",
+    "fixture": "networkx-karate",
+    "adapterClass": "nvidia-lovelace-node",
+    "dtype": "f32",
+    "values": [366124.15625, 183197.28125, 1.5, 1.2999999523162842]
+}
