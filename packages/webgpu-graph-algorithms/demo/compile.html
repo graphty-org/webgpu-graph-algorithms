@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>WGSL compile matrix on this device</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 16px;
+                background: #14171c;
+                color: #e6e9ef;
+                font:
+                    13px/1.4 ui-monospace,
+                    monospace;
+            }
+            h1 {
+                font-size: 15px;
+                margin: 0 0 8px;
+            }
+            table {
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+            td,
+            th {
+                border: 1px solid #2c3340;
+                padding: 3px 8px;
+                text-align: left;
+                vertical-align: top;
+            }
+            .ok {
+                color: #7ee787;
+            }
+            .bad {
+                color: #ff7b7b;
+            }
+            pre {
+                white-space: pre-wrap;
+                max-width: 120ch;
+            }
+            button {
+                font: inherit;
+                padding: 4px 10px;
+                margin: 8px 8px 0 0;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>WGSL compile matrix on this device</h1>
+        <div id="adapter">starting...</div>
+        <button id="copy">Copy report</button>
+        <div id="out"></div>
+        <script type="module" src="./compile.ts"></script>
+    </body>
+</html>

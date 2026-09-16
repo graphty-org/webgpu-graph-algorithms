@@ -82,6 +82,9 @@ const TYPES_PATTERNS = [
 
 export default tseslint.config(
     ...root,
+    // ---- demo/: the standalone browser demo page (vite dev server over demo/, not part of the build, the tests or
+    // tsconfig.json), type-checked by hand with the DOM lib; ignored here exactly as the root ignores examples/**.
+    { ignores: ["demo/**"] },
     // ---- layer zones (spec 3.2: device < context < memory < kernel < kernels.ts < primitives < algorithms / layouts < accelerator)
     zone(
         ["src/errors.ts", "src/constants.ts"],
