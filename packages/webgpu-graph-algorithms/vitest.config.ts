@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 /**
- * The two Chromium flag sets of spec 12.2, selected by GRAPHTY_BROWSER_GPU ("nvidia" | "swiftshader", default
- * swiftshader). Kept in one exported constant so the Vitest 4 provider change is a one-line move (spec 11.1).
+ * The Chromium flag sets: the two of spec 12.2 (GRAPHTY_BROWSER_GPU "nvidia" | "swiftshader", default swiftshader)
+ * and the host lane's "metal" and "warp". Kept in one exported constant so the Vitest 4 provider change is a
+ * one-line move (spec 11.1).
  * @public exported for scripts/run-browser-project.js and the CLAUDE.md "Verified Platform Facts" table
  */
 export const BROWSER_FLAGS = Object.freeze({
@@ -27,12 +28,25 @@ export const BROWSER_FLAGS = Object.freeze({
     // The host lane on macOS (hosts.yml): Dawn's Metal backend when headless Chromium reaches the VM's device (the
     // blocklist ignored), SwiftShader otherwise -- the tests accept either under this set; WebKit takes no flags.
     metal: Object.freeze(["--enable-unsafe-webgpu", "--ignore-gpu-blocklist", "--use-angle=metal"]),
+    // The host lane on Windows (hosts.yml): Dawn's D3D12 backend on WARP, Microsoft's software rasterizer. Only the
+    // FULL Chromium build grants it (BROWSER_CHANNEL below); Playwright's headless shell returns no adapter under any
+    // flag set on windows-latest, and an ANGLE override (--use-angle=swiftshader) hides WARP even in the full build.
+    warp: Object.freeze(["--enable-unsafe-webgpu", "--ignore-gpu-blocklist"]),
+});
+
+/**
+ * The Playwright channel per flag set: undefined selects Playwright's default headless shell; "chromium" the full
+ * Chromium build in its new headless mode, the only one that exposes WebGPU on windows-latest (measured by
+ * scripts/probe-browser-flags.mjs, hosts.yml run 35129487903).
+ */
+const BROWSER_CHANNEL: Readonly<Partial<Record<keyof typeof BROWSER_FLAGS, "chromium">>> = Object.freeze({
+    warp: "chromium",
 });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const browserGpuEnv = process.env.GRAPHTY_BROWSER_GPU;
 const browserGpu: keyof typeof BROWSER_FLAGS =
-    browserGpuEnv === "nvidia" || browserGpuEnv === "metal" ? browserGpuEnv : "swiftshader";
+    browserGpuEnv === "nvidia" || browserGpuEnv === "metal" || browserGpuEnv === "warp" ? browserGpuEnv : "swiftshader";
 /** GRAPHTY_BROWSER=webkit runs the browser project in Playwright's WebKit (the host lane's Safari proxy); default chromium. */
 const browserName: "chromium" | "webkit" = process.env.GRAPHTY_BROWSER === "webkit" ? "webkit" : "chromium";
 const gpuRequire = process.env.GRAPHTY_GPU_REQUIRE ?? "";
@@ -227,7 +241,11 @@ export default defineConfig({
                                 ? { browser: "webkit", launch: { env: browserLaunchEnv() } }
                                 : {
                                       browser: "chromium",
-                                      launch: { args: [...BROWSER_FLAGS[browserGpu]], env: browserLaunchEnv() },
+                                      launch: {
+                                          args: [...BROWSER_FLAGS[browserGpu]],
+                                          channel: BROWSER_CHANNEL[browserGpu],
+                                          env: browserLaunchEnv(),
+                                      },
                                   },
                         ],
                     },

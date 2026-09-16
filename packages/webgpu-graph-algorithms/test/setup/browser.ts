@@ -23,28 +23,62 @@ export function browserPolicy(): GpuPolicy {
     return parseGpuRequire(import.meta.env.GRAPHTY_GPU_REQUIRE);
 }
 
-/** The flag set vitest.config.ts launched the browser with: "nvidia" | "swiftshader" | "metal" (the host lane on macOS: Chromium or WebKit on the runner's Metal device). */
-export function browserGpu(): "nvidia" | "swiftshader" | "metal" {
+/** The flag sets vitest.config.ts can launch the browser with (BROWSER_FLAGS): the spec's two plus the host lane's. */
+export type BrowserGpu = "nvidia" | "swiftshader" | "metal" | "warp";
+
+/**
+ * The flag set vitest.config.ts launched the browser with: "nvidia" | "swiftshader" | "metal" (the host lane on
+ * macOS: Chromium or WebKit on the runner's Metal device) | "warp" (the host lane on Windows: the full Chromium build
+ * on Dawn's D3D12 backend over WARP).
+ */
+export function browserGpu(): BrowserGpu {
     const value = import.meta.env.GRAPHTY_BROWSER_GPU;
-    return value === "nvidia" || value === "metal" ? value : "swiftshader";
+    return value === "nvidia" || value === "metal" || value === "warp" ? value : "swiftshader";
 }
 
 /**
- * What the flag set promises about the adapter: "swiftshader" must yield a software adapter, "nvidia" a hardware
- * one, and "metal" (the host lane) whatever the runner grants -- a Metal device when headless Chromium reaches it,
- * SwiftShader when the VM's GPU is blocklisted -- so it is unconstrained (null) and the tests record what they got.
+ * What the flag set promises about the adapter: "swiftshader" and "warp" must yield a software adapter (WARP is a
+ * CPU rasterizer: architecture "warp" is software to isSoftwareAdapter although Chromium reports isFallbackAdapter
+ * false for it), "nvidia" a hardware one, and "metal" (the host lane) whatever the runner grants -- a Metal device
+ * when headless Chromium reaches it, SwiftShader when the VM's GPU is blocklisted -- so it is unconstrained (null)
+ * and the tests record what they got.
  */
 export function browserExpectsSoftware(): boolean | null {
     const gpu = browserGpu();
-    return gpu === "metal" ? null : gpu === "swiftshader";
+    return gpu === "metal" ? null : gpu === "swiftshader" || gpu === "warp";
 }
 
-/** The adapter requireBrowserGpu() last saw (its info), for the flag-set-agnostic checks. */
+/** The vendor / architecture a flag set names, or null when it names none ("metal": whatever the runner grants). */
+export function browserExpectedAdapter(): { readonly vendor: string; readonly architecture: string | null } | null {
+    switch (browserGpu()) {
+        case "nvidia":
+            return { vendor: "nvidia", architecture: null };
+        case "swiftshader":
+            return { vendor: "google", architecture: "swiftshader" };
+        case "warp":
+            return { vendor: "microsoft", architecture: "warp" };
+        case "metal":
+            return null;
+        default:
+            return null;
+    }
+}
+
+/** The adapter requireBrowserGpu() last saw (its info and features), for the flag-set-agnostic checks. */
 let grantedInfo: GPUAdapterInfo | null = null;
+let grantedFeatures: ReadonlySet<string> | null = null;
 
 /** Whether the adapter requireBrowserGpu() granted is a software one (false until a test has called it). */
 export function browserGrantedSoftware(): boolean {
     return grantedInfo !== null && isSoftwareAdapter(grantedInfo);
+}
+
+/**
+ * Whether the adapter requireBrowserGpu() granted offers the `subgroups` feature (Chromium's adapters do, on
+ * SwiftShader, NVIDIA, Metal and WARP alike; WebKit 26 on the macOS runner does not); false until a test called it.
+ */
+export function browserAdapterOffersSubgroups(): boolean {
+    return grantedFeatures !== null && grantedFeatures.has("subgroups");
 }
 
 /** navigator.gpu or undefined (never throws). */
@@ -72,6 +106,7 @@ export async function requireBrowserGpu(t: TestContext): Promise<void> {
         } else {
             ({ info } = adapter);
             grantedInfo = info;
+            grantedFeatures = new Set<string>(adapter.features);
         }
     }
     const verdict = checkAdapter(info, policy, { browser: true });
@@ -103,7 +138,7 @@ export async function acquireBrowser(options: BrowserGpuOptions = {}): Promise<G
     return ctx;
 }
 
-/** The browser's gpuScale(): 1 on a hardware adapter (nvidia, metal), 1 / 50 on swiftshader. */
+/** The browser's gpuScale(): 1 on a hardware adapter (nvidia, a granted Metal device), 1 / 50 on a software one (swiftshader, warp, SwiftShader granted under "metal"). */
 export function browserScale(): number {
     const expected = browserExpectsSoftware();
     return (expected ?? browserGrantedSoftware()) ? 1 / 50 : 1;

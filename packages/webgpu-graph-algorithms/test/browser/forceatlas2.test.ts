@@ -19,8 +19,8 @@ import { runFrameLoop, runFrameLoopUntilSettled } from "../helpers/frame-loop.js
 import { fixture, randomEdges, snapshotOf } from "../helpers/graphs.js";
 import {
     acquireBrowser,
+    browserExpectedAdapter,
     browserExpectsSoftware,
-    browserGpu,
     browserGrantedSoftware,
     browserScale,
     requireBrowserGpu,
@@ -33,8 +33,9 @@ import {
  */
 function expectAdapterMatchesFlagSet(ctx: GpuContext): void {
     expect(ctx.caps.software).toBe(browserExpectsSoftware() ?? browserGrantedSoftware());
-    if (browserGpu() === "nvidia") {
-        expect(ctx.caps.vendor).toBe("nvidia");
+    const named = browserExpectedAdapter();
+    if (named !== null) {
+        expect(ctx.caps.vendor).toBe(named.vendor);
     }
 }
 

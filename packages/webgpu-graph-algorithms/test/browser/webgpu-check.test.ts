@@ -7,7 +7,16 @@
 
 import { isSoftwareAdapter } from "../../src/device/acquire.js";
 import { BufferUsage, MapMode } from "../../src/device/webgpu-constants.js";
-import { browserGpu, browserPolicy, browserScale, browserWebGpu, requireBrowserGpu } from "../setup/browser.js";
+import {
+    browserExpectedAdapter,
+    browserExpectsSoftware,
+    browserGpu,
+    browserGrantedSoftware,
+    browserPolicy,
+    browserScale,
+    browserWebGpu,
+    requireBrowserGpu,
+} from "../setup/browser.js";
 
 /** One workgroup per item; every item writes 42 + 2 * its index (the same trivial kernel as test/device/acquire.test.ts). */
 const TRIVIAL_WGSL = `
@@ -70,12 +79,14 @@ async function grantedAdapter(): Promise<GPUAdapter> {
 
 describe("browser: WebGPU check (spec 13 row P0; contract 5.5)", () => {
     it("receives GRAPHTY_GPU_REQUIRE, GRAPHTY_BROWSER_GPU and GRAPHTY_NOISE_FLOOR_WRITE through import.meta.env", () => {
-        expect(["nvidia", "swiftshader", "metal"]).toContain(import.meta.env.GRAPHTY_BROWSER_GPU);
+        expect(["nvidia", "swiftshader", "metal", "warp"]).toContain(import.meta.env.GRAPHTY_BROWSER_GPU);
         expect(typeof import.meta.env.GRAPHTY_GPU_REQUIRE).toBe("string");
         expect(typeof import.meta.env.GRAPHTY_NOISE_FLOOR_WRITE).toBe("string");
         expect(browserPolicy().raw).toBe(import.meta.env.GRAPHTY_GPU_REQUIRE);
         expect(browserGpu()).toBe(import.meta.env.GRAPHTY_BROWSER_GPU);
-        expect(browserScale()).toBe(browserGpu() === "nvidia" ? 1 : 1 / 50);
+        // nvidia is hardware, swiftshader and warp are software (1 / 50); metal follows the adapter the run got
+        const expectedScale = (browserExpectsSoftware() ?? browserGrantedSoftware()) ? 1 / 50 : 1;
+        expect(browserScale()).toBe(expectedScale);
         console.warn(
             `[browser] import.meta.env GRAPHTY_GPU_REQUIRE=${import.meta.env.GRAPHTY_GPU_REQUIRE} GRAPHTY_BROWSER_GPU=${import.meta.env.GRAPHTY_BROWSER_GPU} GRAPHTY_NOISE_FLOOR_WRITE=${import.meta.env.GRAPHTY_NOISE_FLOOR_WRITE}`,
         );
@@ -98,11 +109,12 @@ describe("browser: WebGPU check (spec 13 row P0; contract 5.5)", () => {
         );
         // Chromium reports isFallbackAdapter as a boolean (so does Dawn-node 0.4.0; contract correction 5)
         expect(typeof info.isFallbackAdapter).toBe("boolean");
-        if (browserGpu() !== "metal") {
+        const named = browserExpectedAdapter();
+        if (named !== null) {
             expect(
-                browserGpu(),
+                { vendor: info.vendor, software },
                 "the flag set vitest.config.ts selected (GRAPHTY_BROWSER_GPU) must match the adapter Chromium granted: an NVIDIA flag set that yields SwiftShader means the driver did not initialise (dev box: LD_LIBRARY_PATH or GRAPHTY_EGL_LIB_DIR, spec 12.2; docs/HEADLESS_GPU_REPORT.md)",
-            ).toBe(software ? "swiftshader" : "nvidia");
+            ).toEqual({ vendor: named.vendor, software: browserExpectsSoftware() });
         }
         const policy = browserPolicy();
         if (policy.level === "vendor") {

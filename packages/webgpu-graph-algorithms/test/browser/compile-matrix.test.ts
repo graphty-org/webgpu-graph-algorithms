@@ -28,7 +28,7 @@ import {
     weightedRandom,
 } from "../helpers/segmented-reduce.js";
 import { segmentedReduceOracle } from "../oracle/segmented-reduce.js";
-import { acquireBrowser, requireBrowserGpu } from "../setup/browser.js";
+import { acquireBrowser, browserAdapterOffersSubgroups, requireBrowserGpu } from "../setup/browser.js";
 
 describe("compile matrix on Chromium", () => {
     let ctx: GpuContext | null = null;
@@ -50,9 +50,9 @@ describe("compile matrix on Chromium", () => {
         }
     }
 
-    it("the feature context has subgroups (both CI browser adapters expose it) and the twin does not", async (t) => {
+    it("the feature context has subgroups iff the adapter offers them (Chromium's CI adapters do, WebKit does not) and the twin never does", async (t) => {
         const { ctx: a, twin: b } = await contexts(t);
-        expect(a.caps.features.has("subgroups")).toBe(true);
+        expect(a.caps.features.has("subgroups")).toBe(browserAdapterOffersSubgroups());
         expect(b.caps.features.has("subgroups")).toBe(false);
     });
 

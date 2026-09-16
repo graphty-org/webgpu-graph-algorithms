@@ -10,6 +10,7 @@ import { MAX_WORKGROUPS_PER_DIM } from "../../src/constants.js";
 import { GpuContext } from "../../src/context.js";
 import { isSoftwareAdapter } from "../../src/device/acquire.js";
 import {
+    browserExpectedAdapter,
     browserExpectsSoftware,
     browserGpu,
     browserGrantedSoftware,
@@ -32,16 +33,19 @@ describe("./browser entry (spec 11.6 item 1)", () => {
             expect(result.summary.software).toBe(expectedSoftware);
             expect(isSoftwareAdapter(result.adapter.info)).toBe(expectedSoftware);
         }
-        if (browserGpu() === "nvidia") {
-            expect(result.summary.vendor).toBe("nvidia");
-            expect(result.adapter.info.isFallbackAdapter).toBe(false);
-        } else if (browserGpu() === "metal") {
-            // The host lane: a Metal device when headless Chromium reaches the VM's GPU, SwiftShader when it is
-            // blocklisted; either is accepted and the summary line above records which one the run got.
+        const named = browserExpectedAdapter();
+        if (named === null) {
+            // "metal", the host lane: a Metal device when headless Chromium reaches the VM's GPU, SwiftShader when it
+            // is blocklisted; either is accepted and the summary line below records which one the run got.
             expect(result.summary.software).toBe(isSoftwareAdapter(result.adapter.info));
         } else {
-            expect(result.summary.vendor).toBe("google");
-            expect(result.summary.architecture).toBe("swiftshader");
+            expect(result.summary.vendor).toBe(named.vendor);
+            if (named.architecture !== null) {
+                expect(result.summary.architecture).toBe(named.architecture);
+            }
+        }
+        if (browserGpu() === "nvidia") {
+            expect(result.adapter.info.isFallbackAdapter).toBe(false);
         }
         const policy = browserPolicy();
         if (policy.level === "vendor") {

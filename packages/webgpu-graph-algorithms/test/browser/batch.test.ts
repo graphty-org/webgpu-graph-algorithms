@@ -161,7 +161,10 @@ describe("CommandBatch in the browser (spec 5.8, 5.7)", () => {
                     throw new Error("unreachable");
                 }
                 expect(delivered.code).toBe("E_VALIDATION");
-                expect(`${String(delivered.details.label)} ${String(delivered.details.message)}`).toContain("fill/2");
+                // Chromium quotes the bind group's label ("fill/2"); WebKit names the failing call (createBindGroup)
+                expect(`${String(delivered.details.label)} ${String(delivered.details.message)}`).toMatch(
+                    /fill\/2|createBindGroup/,
+                );
                 if (path === "readback") {
                     expect(delivered.details.batchId).toBe(submitted.id);
                 }

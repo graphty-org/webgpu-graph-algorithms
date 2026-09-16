@@ -57,7 +57,7 @@ import {
 import { RANDOM1K_COUNT, RANDOM1K_SEED, REDUCE_NOISE_COUNTS, reduceInput } from "../helpers/reduce-input.js";
 import { outDegreeOracle } from "../oracle/degree.js";
 import { reduceOracle } from "../oracle/reduce.js";
-import { acquireBrowser, requireBrowserGpu } from "../setup/browser.js";
+import { acquireBrowser, browserAdapterOffersSubgroups, requireBrowserGpu } from "../setup/browser.js";
 
 // ---- local buffer helpers (PLAN DECISION a: test/helpers/device.ts imports the Node setup and cannot be bundled here)
 
@@ -586,10 +586,12 @@ describe("walking skeleton in the browser (spec 11.5, 11.6 item 2)", () => {
         console.warn(
             `[skeleton] adapter ${cls} subgroups ${ctx.caps.subgroupMinSize}/${ctx.caps.subgroupMaxSize} workgroup ${ctx.workgroupSize} software ${String(ctx.caps.software)}`,
         );
-        expect(ctx.caps.features.has("subgroups"), "both CI browser adapters expose subgroups (spec 11.6 item 5)").toBe(
-            true,
-        );
-        expect(ctx.caps.subgroupMaxSize).toBeGreaterThanOrEqual(4);
+        // the feature context has subgroups iff the adapter offers them: Chromium's CI adapters do (spec 11.6 item 5;
+        // SwiftShader, NVIDIA, Metal, WARP), WebKit 26 on the macOS runner does not
+        expect(ctx.caps.features.has("subgroups")).toBe(browserAdapterOffersSubgroups());
+        if (browserAdapterOffersSubgroups()) {
+            expect(ctx.caps.subgroupMaxSize).toBeGreaterThanOrEqual(4);
+        }
 
         const karate = snapshotOf(KARATE_EDGES, { label: "skeleton/karate" });
         const karateCsr = csrSnapshotOf(KARATE_EDGES, { label: "skeleton/karate-csr" });
