@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-speed-finalize",
+    "fixture": "karate",
+    "adapterClass": "oracle-f64",
+    "dtype": "f32",
+    "values": [366257.0467533182, 183128.5233766591, 1.5, 1.3]
+}

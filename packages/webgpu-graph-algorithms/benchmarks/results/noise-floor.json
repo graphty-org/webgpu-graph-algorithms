@@ -1,0 +1,828 @@
+{
+    "recordedAt": "2026-09-16T05:47:52.931Z",
+    "adapters": [
+        {
+            "class": "mesa-software-node",
+            "vendor": "mesa",
+            "architecture": "software",
+            "description": "llvmpipe: Mesa 23.2.1-1ubuntu3.1~22.04.3 (LLVM 15.0.7) 0.0.1",
+            "runtime": "node"
+        },
+        {
+            "class": "nvidia-lovelace-node",
+            "vendor": "nvidia",
+            "architecture": "lovelace",
+            "description": "NVIDIA: 580.173.02 580.173.2.0",
+            "runtime": "node"
+        },
+        {
+            "class": "google-swiftshader-browser",
+            "vendor": "google",
+            "architecture": "swiftshader",
+            "description": "",
+            "runtime": "browser"
+        },
+        {
+            "class": "nvidia-lovelace-browser",
+            "vendor": "nvidia",
+            "architecture": "lovelace",
+            "description": "",
+            "runtime": "browser"
+        }
+    ],
+    "rows": [
+        {
+            "id": "reduce.sum.twin",
+            "kernel": "reduce",
+            "fixture": "random1k",
+            "comparison": "twin",
+            "a": "mesa-software-node",
+            "b": "mesa-software-node/no-subgroups",
+            "maxRelError": 1.583126656148373e-7,
+            "maxAbsError": 0.0001220703125,
+            "samples": 11
+        },
+        {
+            "id": "reduce.sum.cross",
+            "kernel": "reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 1.583126656148373e-7,
+            "maxAbsError": 0.0001220703125,
+            "samples": 11
+        },
+        {
+            "id": "degree.cross",
+            "kernel": "degree",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "fa2-skeleton.force.oracle-f64.google-swiftshader-browser",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "karate",
+            "comparison": "oracle-f64",
+            "a": "google-swiftshader-browser",
+            "b": "oracle-f64",
+            "maxRelError": 3.413326601283979e-7,
+            "maxAbsError": 0.0008281735526907141,
+            "samples": 102
+        },
+        {
+            "id": "fa2-skeleton.trace.oracle-f64.google-swiftshader-browser",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate",
+            "comparison": "oracle-f64",
+            "a": "google-swiftshader-browser",
+            "b": "oracle-f64",
+            "maxRelError": 4.232906468575991e-8,
+            "maxAbsError": 0.015503318223636597,
+            "samples": 4
+        },
+        {
+            "id": "fa2-skeleton.force.oracle-f64.nvidia-lovelace-browser",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "karate",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-browser",
+            "b": "oracle-f64",
+            "maxRelError": 2.5710411312906816e-7,
+            "maxAbsError": 0.0003953212485612312,
+            "samples": 102
+        },
+        {
+            "id": "fa2-skeleton.trace.oracle-f64.nvidia-lovelace-browser",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-browser",
+            "b": "oracle-f64",
+            "maxRelError": 4.232906468575991e-8,
+            "maxAbsError": 0.015503318223636597,
+            "samples": 4
+        },
+        {
+            "id": "segmented-reduce.sum.oracle-f64.google-swiftshader-browser",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "oracle-f64",
+            "a": "google-swiftshader-browser",
+            "b": "oracle-f64",
+            "maxRelError": 1.7834327718913287e-7,
+            "maxAbsError": 0.000006079673767089844,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.oracle-f64.nvidia-lovelace-browser",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-browser",
+            "b": "oracle-f64",
+            "maxRelError": 1.7834327718913287e-7,
+            "maxAbsError": 0.000006079673767089844,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.oracle-f64.nvidia-lovelace-node",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64",
+            "maxRelError": 1.7834327718913287e-7,
+            "maxAbsError": 0.000006079673767089844,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.cross.nvidia-lovelace-node--google-swiftshader-browser",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "nvidia-lovelace-node",
+            "b": "google-swiftshader-browser",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.cross.nvidia-lovelace-node--mesa-software-node",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "nvidia-lovelace-node",
+            "b": "mesa-software-node",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.cross.nvidia-lovelace-node--nvidia-lovelace-browser",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "nvidia-lovelace-node",
+            "b": "nvidia-lovelace-browser",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.oracle-f64.mesa-software-node",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 1.7834327718913287e-7,
+            "maxAbsError": 0.000006079673767089844,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.cross.mesa-software-node--google-swiftshader-browser",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "google-swiftshader-browser",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.cross.mesa-software-node--nvidia-lovelace-browser",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-browser",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "segmented-reduce.sum.cross.mesa-software-node--nvidia-lovelace-node",
+            "kernel": "segmented-reduce",
+            "fixture": "random1k",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 1000
+        },
+        {
+            "id": "fa2-skeleton.force.cross",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "karate",
+            "comparison": "cross-adapter",
+            "a": "google-swiftshader-browser",
+            "b": "nvidia-lovelace-browser",
+            "maxRelError": 3.294984290255799e-7,
+            "maxAbsError": 0.00048828125,
+            "samples": 102
+        },
+        {
+            "id": "fa2-skeleton.force.twin",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "karate",
+            "comparison": "twin",
+            "a": "mesa-software-node",
+            "b": "mesa-software-node/no-subgroups",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 102
+        },
+        {
+            "id": "fa2-skeleton.force.oracle-f64",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "karate",
+            "comparison": "oracle-f64",
+            "a": "google-swiftshader-browser",
+            "b": "oracle-f64",
+            "maxRelError": 3.413327761753485e-7,
+            "maxAbsError": 0.0008281735526907141,
+            "samples": 102
+        },
+        {
+            "id": "fa2-skeleton.trace.cross",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "networkx-karate",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 8.535355962325963e-8,
+            "maxAbsError": 0.03125,
+            "samples": 4
+        },
+        {
+            "id": "fa2-skeleton.trace.twin",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate",
+            "comparison": "twin",
+            "a": "nvidia-lovelace-node",
+            "b": "nvidia-lovelace-node/no-subgroups",
+            "maxRelError": 8.532260134277298e-8,
+            "maxAbsError": 0.03125,
+            "samples": 4
+        },
+        {
+            "id": "fa2-skeleton.trace.oracle-f64",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 1.276516551369616e-7,
+            "maxAbsError": 0.0467533182236366,
+            "samples": 4
+        },
+        {
+            "id": "fa2-inspect.attraction.cross",
+            "kernel": "fa2-attraction",
+            "fixture": "random1k-K2",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-inspect.attraction.oracle-f64",
+            "kernel": "fa2-attraction",
+            "fixture": "random1k-K2",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 8.604289133958256e-7,
+            "maxAbsError": 0.0000017285346984863281,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-force-parity.cross",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "random1k-K3",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 8.36365607834118e-7,
+            "maxAbsError": 0.0234375,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-twins.force.twin",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "random1k-K3",
+            "comparison": "twin",
+            "a": "mesa-software-node",
+            "b": "mesa-software-node/no-subgroups",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-force-parity.oracle-f64",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "random1k-K3",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.000002868705574215935,
+            "maxAbsError": 0.12052967556519434,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-inspect.epilogue.cross",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "random1k-K3-epilogue",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 5.3273514516437816e-8,
+            "maxAbsError": 24,
+            "samples": 2
+        },
+        {
+            "id": "fa2-twins.trace.twin",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "random1k-states10",
+            "comparison": "twin",
+            "a": "mesa-software-node",
+            "b": "mesa-software-node/no-subgroups",
+            "maxRelError": 3.957955431047073e-7,
+            "maxAbsError": 0.25,
+            "samples": 120
+        },
+        {
+            "id": "fa2-inspect.epilogue.oracle-f64",
+            "kernel": "fa2-repulsion-exact",
+            "fixture": "random1k-K3-epilogue",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 5.190881075178998e-8,
+            "maxAbsError": 23.385193705558777,
+            "samples": 2
+        },
+        {
+            "id": "fa2-inspect.state.cross",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "random1k-states10",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 4.449364056844719e-7,
+            "maxAbsError": 0.25,
+            "samples": 120
+        },
+        {
+            "id": "fa2-inspect.state.oracle-f64",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "random1k-states10",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 3.805473985430599e-7,
+            "maxAbsError": 7.385193705558777,
+            "samples": 120
+        },
+        {
+            "id": "fa2-inspect.positions.cross",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-K5",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 4.876500302187037e-7,
+            "maxAbsError": 0.000030517578125,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-twins.positions.twin",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-K5",
+            "comparison": "twin",
+            "a": "mesa-software-node",
+            "b": "mesa-software-node/no-subgroups",
+            "maxRelError": 0,
+            "maxAbsError": 0,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-inspect.positions.oracle-f64",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-K5",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.0000016234196187657021,
+            "maxAbsError": 0.00010226507461652545,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-inspect.partials.cross",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-K5-partials",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 5.094475574818393e-7,
+            "maxAbsError": 0.75,
+            "samples": 13
+        },
+        {
+            "id": "fa2-inspect.partials.oracle-f64",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-K5-partials",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.0000014042464693045417,
+            "maxAbsError": 0.18168552592396736,
+            "samples": 13
+        },
+        {
+            "id": "fa2-inspect.scene.cross",
+            "kernel": "fa2-to-scene",
+            "fixture": "random1k-toScene",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 4.876500302187037e-7,
+            "maxAbsError": 0.000030517578125,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-inspect.scene.oracle-f64",
+            "kernel": "fa2-to-scene",
+            "fixture": "random1k-toScene",
+            "comparison": "oracle-f64",
+            "a": "mesa-software-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.0000016399847018441745,
+            "maxAbsError": 0.00009918212890625,
+            "samples": 3000
+        },
+        {
+            "id": "fa2-inspect.k1.cross",
+            "kernel": "fa2-stats-finalize",
+            "fixture": "random1k-K1",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 6.284303130483709e-7,
+            "maxAbsError": 0.0000152587890625,
+            "samples": 8
+        },
+        {
+            "id": "fa2-inspect.k1.oracle-f64",
+            "kernel": "fa2-stats-finalize",
+            "fixture": "random1k-K1",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.0000015031196537844087,
+            "maxAbsError": 0.000006406036703765494,
+            "samples": 8
+        },
+        {
+            "id": "fa2-trace-parity.cross10",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "random1k-trace10",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 0.0000019493985387308555,
+            "maxAbsError": 16,
+            "samples": 60
+        },
+        {
+            "id": "fa2-trace-parity.oracle-f32",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "random1k-trace10",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f32",
+            "maxRelError": 0.000002051994251132906,
+            "maxAbsError": 16,
+            "samples": 60
+        },
+        {
+            "id": "fa2-trace-parity.cross50",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate-trace50",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 0.040762185884638716,
+            "maxAbsError": 502.125,
+            "samples": 300
+        },
+        {
+            "id": "fa2-trace-parity.oracle-f64",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate-trace50",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.04949932956126063,
+            "maxAbsError": 580.0819185969885,
+            "samples": 300
+        },
+        {
+            "id": "fa2-trace-parity.resync.oracle-f64",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate-resync50",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64/nvidia-lovelace-node",
+            "maxRelError": 0.000010446428601524185,
+            "maxAbsError": 0.024725931754801422,
+            "samples": 500
+        },
+        {
+            "id": "fa2-trace-parity.resync.oracle-f32",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate-resync50",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node-no-subgroups",
+            "b": "oracle-f32/nvidia-lovelace-node-no-subgroups",
+            "maxRelError": 0.000006774902199719397,
+            "maxAbsError": 0.03125,
+            "samples": 500
+        },
+        {
+            "id": "fa2-distributional.cross",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-metrics100",
+            "comparison": "cross-adapter",
+            "a": "mesa-software-node",
+            "b": "nvidia-lovelace-node",
+            "maxRelError": 0.05700000000000005,
+            "maxAbsError": 12.9366455078125,
+            "samples": 17
+        },
+        {
+            "id": "fa2-distributional.oracle-f64",
+            "kernel": "fa2-integrate",
+            "fixture": "random1k-metrics100",
+            "comparison": "oracle-f64",
+            "a": "nvidia-lovelace-node",
+            "b": "oracle-f64",
+            "maxRelError": 0.05500000000000005,
+            "maxAbsError": 16.9322509765625,
+            "samples": 17
+        },
+        {
+            "id": "fa2-trace-parity.seeds10.path10",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "path10-trace10-seeds1-8",
+            "comparison": "oracle-f64",
+            "a": "oracle-f32",
+            "b": "oracle-f64",
+            "maxRelError": 0.000001965365476591335,
+            "maxAbsError": 0.0025645640989750973,
+            "samples": 480
+        },
+        {
+            "id": "fa2-trace-parity.seeds.path10",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "path10-trace50-seeds1-8",
+            "comparison": "oracle-f64",
+            "a": "oracle-f32",
+            "b": "oracle-f64",
+            "maxRelError": 0.3325807617902771,
+            "maxAbsError": 906.9517108700093,
+            "samples": 2400
+        },
+        {
+            "id": "fa2-trace-parity.seeds10.karate",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate-trace10-seeds1-8",
+            "comparison": "oracle-f64",
+            "a": "oracle-f32",
+            "b": "oracle-f64",
+            "maxRelError": 0.00005501187544369047,
+            "maxAbsError": 0.31846021342789754,
+            "samples": 480
+        },
+        {
+            "id": "fa2-trace-parity.seeds.karate",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "karate-trace50-seeds1-8",
+            "comparison": "oracle-f64",
+            "a": "oracle-f32",
+            "b": "oracle-f64",
+            "maxRelError": 0.46512550603035613,
+            "maxAbsError": 27865.913278099382,
+            "samples": 2400
+        },
+        {
+            "id": "fa2-trace-parity.seeds10.grid10",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "grid10-trace10-seeds1-8",
+            "comparison": "oracle-f64",
+            "a": "oracle-f32",
+            "b": "oracle-f64",
+            "maxRelError": 0.000054354404189076314,
+            "maxAbsError": 20.676505090901628,
+            "samples": 480
+        },
+        {
+            "id": "fa2-trace-parity.seeds.grid10",
+            "kernel": "fa2-speed-finalize",
+            "fixture": "grid10-trace50-seeds1-8",
+            "comparison": "oracle-f64",
+            "a": "oracle-f32",
+            "b": "oracle-f64",
+            "maxRelError": 0.0943435236073985,
+            "maxAbsError": 31976.37672999408,
+            "samples": 2400
+        }
+    ],
+    "tolerances": {
+        "fa2-skeleton.force": {
+            "value": 0.0000034133277617534847,
+            "basis": "fa2-skeleton.force.oracle-f64",
+            "factor": 10
+        },
+        "fa2-skeleton.trace": {
+            "value": 0.000001276516551369616,
+            "basis": "fa2-skeleton.trace.oracle-f64",
+            "factor": 10
+        },
+        "fa2-skeleton.force.twin": {
+            "value": 5.960464477539062e-7,
+            "basis": "fa2-skeleton.force.twin",
+            "factor": 10
+        },
+        "fa2-skeleton.trace.twin": {
+            "value": 8.532260134277298e-7,
+            "basis": "fa2-skeleton.trace.twin",
+            "factor": 10
+        },
+        "fa2-skeleton.force.cross": {
+            "value": 0.000003294984290255799,
+            "basis": "fa2-skeleton.force.cross",
+            "factor": 10
+        },
+        "fa2-skeleton.trace.cross": {
+            "value": 8.535355962325962e-7,
+            "basis": "fa2-skeleton.trace.cross",
+            "factor": 10
+        },
+        "segmented-reduce.cross": {
+            "value": 0.000001,
+            "basis": "segmented-reduce.sum.oracle-f64.nvidia-lovelace-node",
+            "factor": 5.607163980392157
+        },
+        "fa2-force-parity": {
+            "value": 0.000028687055742159347,
+            "basis": "fa2-force-parity.oracle-f64",
+            "factor": 10
+        },
+        "fa2-force-parity.cross": {
+            "value": 0.00000836365607834118,
+            "basis": "fa2-force-parity.cross",
+            "factor": 10
+        },
+        "fa2-force-sum": {
+            "value": 0.000028687055742159347,
+            "basis": "fa2-force-parity.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.attraction": {
+            "value": 0.000008604289133958255,
+            "basis": "fa2-inspect.attraction.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.attraction.cross": {
+            "value": 5.960464477539062e-7,
+            "basis": "fa2-inspect.attraction.cross",
+            "factor": 10
+        },
+        "fa2-inspect.epilogue": {
+            "value": 5.960464477539062e-7,
+            "basis": "fa2-inspect.epilogue.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.epilogue.cross": {
+            "value": 5.960464477539062e-7,
+            "basis": "fa2-inspect.epilogue.cross",
+            "factor": 10
+        },
+        "fa2-inspect.state": {
+            "value": 0.000003805473985430599,
+            "basis": "fa2-inspect.state.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.state.cross": {
+            "value": 0.000004449364056844719,
+            "basis": "fa2-inspect.state.cross",
+            "factor": 10
+        },
+        "fa2-inspect.positions": {
+            "value": 0.000016234196187657022,
+            "basis": "fa2-inspect.positions.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.positions.cross": {
+            "value": 0.000004876500302187037,
+            "basis": "fa2-inspect.positions.cross",
+            "factor": 10
+        },
+        "fa2-inspect.partials": {
+            "value": 0.000014042464693045418,
+            "basis": "fa2-inspect.partials.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.partials.cross": {
+            "value": 0.000005094475574818393,
+            "basis": "fa2-inspect.partials.cross",
+            "factor": 10
+        },
+        "fa2-inspect.scene": {
+            "value": 0.000016399847018441744,
+            "basis": "fa2-inspect.scene.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.scene.cross": {
+            "value": 0.000004876500302187037,
+            "basis": "fa2-inspect.scene.cross",
+            "factor": 10
+        },
+        "fa2-inspect.k1": {
+            "value": 0.000015031196537844087,
+            "basis": "fa2-inspect.k1.oracle-f64",
+            "factor": 10
+        },
+        "fa2-inspect.k1.cross": {
+            "value": 0.0000062843031304837094,
+            "basis": "fa2-inspect.k1.cross",
+            "factor": 10
+        },
+        "fa2-trace-parity.f32": {
+            "value": 0.000020519942511329058,
+            "basis": "fa2-trace-parity.oracle-f32",
+            "factor": 10
+        },
+        "fa2-trace-parity.cross10": {
+            "value": 0.000019493985387308555,
+            "basis": "fa2-trace-parity.cross10",
+            "factor": 10
+        },
+        "fa2-trace-parity.f64": {
+            "value": 0.05,
+            "basis": "fa2-trace-parity.oracle-f64",
+            "factor": 1.0101146913135408
+        },
+        "fa2-trace-parity.cross50": {
+            "value": 0.1,
+            "basis": "fa2-trace-parity.cross50",
+            "factor": 2.4532541086734296
+        },
+        "fa2-distributional": {
+            "value": 0.1,
+            "basis": "fa2-distributional.oracle-f64",
+            "factor": 1.8181818181818166
+        },
+        "fa2-distributional.cross": {
+            "value": 0.2,
+            "basis": "fa2-distributional.cross",
+            "factor": 3.5087719298245585
+        },
+        "fa2-twins.force": {
+            "value": 5.960464477539062e-7,
+            "basis": "fa2-twins.force.twin",
+            "factor": 10
+        },
+        "fa2-twins.trace": {
+            "value": 0.000001,
+            "basis": "fa2-twins.trace.twin",
+            "factor": 2.526557
+        },
+        "fa2-twins.positions": {
+            "value": 5.960464477539062e-7,
+            "basis": "fa2-twins.positions.twin",
+            "factor": 10
+        },
+        "fa2-trace-parity.resync.f32": {
+            "value": 0.00006774902199719397,
+            "basis": "fa2-trace-parity.resync.oracle-f32",
+            "factor": 10
+        },
+        "fa2-trace-parity.resync.f64": {
+            "value": 0.0001,
+            "basis": "fa2-trace-parity.resync.oracle-f64",
+            "factor": 9.572649545071272
+        }
+    }
+}
