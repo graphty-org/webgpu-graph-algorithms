@@ -127,6 +127,37 @@ async function calibrateHeavyStep(ctx: GpuContext, snapshot: GraphSnapshot, tick
 }
 
 /**
+ * The graph and iterations-per-step of a flight-dependent run: calibrateHeavyStep on random1k at `scale` and, when
+ * even MAX_ITERATIONS_PER_STEP cannot outlast the ticks there (a fast adapter behind slow timers: the macOS runner's
+ * Chromium ticks 25-35 ms while its Metal device runs 256 iterations of random1k in 64 ms), on the fixture at twice
+ * and four times the scale -- each doubling of the node count quadruples the exact repulsion tile's work -- before
+ * giving up with the last measurement. An abandoned fixture is released again.
+ */
+async function calibrateFlight(
+    ctx: GpuContext,
+    scale: number,
+    tickMs: number,
+): Promise<{ readonly snapshot: GraphSnapshot; readonly k: number }> {
+    let failure: unknown = null;
+    for (const factor of [1, 2, 4]) {
+        const { snapshot } = fixture("random1k", scale * factor);
+        try {
+            const k = await calibrateHeavyStep(ctx, snapshot, tickMs);
+            if (factor > 1) {
+                console.warn(
+                    `[frame-loop] calibrated on random1k at ${factor}x the scale (${snapshot.nodeCount} nodes): step(${k}) against ${tickMs.toFixed(1)} ms ticks`,
+                );
+            }
+            return { snapshot, k };
+        } catch (err: unknown) {
+            failure = err;
+            ctx.release(snapshot);
+        }
+    }
+    throw failure;
+}
+
+/**
  * Warms ctx.pipelines on a throwaway simulation so the loop's own simulation starts with untouched counters and a
  * bind promise that resolves inside its first tick (contract 3.13 checks the coalescing before awaiting the bind /
  * warm promise; a cold simulation stepped every tick would submit every call of the compile window at once).
@@ -298,9 +329,8 @@ describe("frame loop in Chromium (spec 11.4 last bullet: also on SwiftShader and
         await requireBrowserGpu(t);
         const ctx = await acquireBrowser();
         expectAdapterMatchesFlagSet(ctx);
-        const { snapshot } = fixture("random1k", browserScale());
+        const { snapshot, k } = await calibrateFlight(ctx, browserScale(), await measureTickMs());
         const n = snapshot.nodeCount;
-        const k = await calibrateHeavyStep(ctx, snapshot, await measureTickMs());
         const positions = new Float32Array(3 * n).fill(NaN);
         const sim = createForceAtlas2(ctx, {
             seed: 7,
@@ -358,9 +388,8 @@ describe("frame loop in Chromium (spec 11.4 last bullet: also on SwiftShader and
         await requireBrowserGpu(t);
         const ctx = await acquireBrowser();
         expectAdapterMatchesFlagSet(ctx);
-        const { snapshot } = fixture("random1k", browserScale());
+        const { snapshot, k } = await calibrateFlight(ctx, browserScale(), await measureTickMs());
         const n = snapshot.nodeCount;
-        const k = await calibrateHeavyStep(ctx, snapshot, await measureTickMs());
         const options = {
             seed: 7,
             maxIter: 1_000_000,

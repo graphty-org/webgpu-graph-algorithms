@@ -551,6 +551,43 @@ async function calibrateHeavyStep(
 }
 
 /**
+ * The graph and iterations-per-step of a flight-dependent run: calibrateHeavyStep on random1k at `scale` and, when
+ * even MAX_ITERATIONS_PER_STEP cannot outlast `targetTicks` there (a fast adapter behind slow timers -- the macOS
+ * runner's Chromium is the measured case, test/browser/forceatlas2.test.ts), on the fixture at twice and four times
+ * the scale -- each doubling of the node count quadruples the exact repulsion tile's work -- before giving up with
+ * the last measurement. An abandoned fixture is released again.
+ * @param ctx - the context
+ * @param scale - the fixture scale of the first attempt
+ * @param tickMs - measureTickMs()
+ * @param targetTicks - the batch length aimed at (calibrateHeavyStep)
+ * @returns the graph and the iterations per step
+ */
+async function calibrateFlight(
+    ctx: GpuContext,
+    scale: number,
+    tickMs: number,
+    targetTicks?: number,
+): Promise<{ readonly snapshot: GraphSnapshot; readonly k: number }> {
+    let failure: unknown = null;
+    for (const factor of [1, 2, 4]) {
+        const { snapshot } = fixture("random1k", scale * factor);
+        try {
+            const k = await calibrateHeavyStep(ctx, snapshot, tickMs, targetTicks);
+            if (factor > 1) {
+                console.warn(
+                    `[frame-loop] calibrated on random1k at ${factor}x the scale (${snapshot.nodeCount} nodes): step(${k}) against ${tickMs.toFixed(1)} ms ticks`,
+                );
+            }
+            return { snapshot, k };
+        } catch (err: unknown) {
+            failure = err;
+            ctx.release(snapshot);
+        }
+    }
+    throw failure;
+}
+
+/**
  * Asserts a tick series never decreases, except across the ticks in `except` (a reheat resets iterationsDone).
  * @param values - the per-tick series
  * @param except - ticks after which a drop is allowed
@@ -588,13 +625,12 @@ describe("frame loop on the GPU ForceAtlas2 simulation (spec 7.19; 11.4 last bul
         // 25-40 ms, on the 16x tile 265-275 ms, against a 1 ms tick; inside the
         // whole-project run (32 forks on the card) one setTimeout(0) tick of this worker exceeded the 1k batch
         // once in four runs and batch 1 had landed before the second tick below (inFlight 1 instead of 2)
-        const { snapshot } = fixture("random1k", 16 * gpuScale());
-        const n = snapshot.nodeCount;
         // the heaviest batch the adapter offers (64 ticks asked for; MAX_ITERATIONS_PER_STEP on a fast adapter), and
         // ctx.pipelines is warm afterwards: every premise below ("batch 1 still in flight two ticks after its
         // call", "batch 2 still in flight when batch 1 lands") is a wall-clock race against the tick gap, and on a
         // loaded box (parallel test workers, another process on the card) a batch of a few ticks loses it
-        const k = await calibrateHeavyStep(ctx, snapshot, await measureTickMs(), 64);
+        const { snapshot, k } = await calibrateFlight(ctx, 16 * gpuScale(), await measureTickMs(), 64);
+        const n = snapshot.nodeCount;
         const positions = new Float32Array(3 * n).fill(NaN);
         const sim = createForceAtlas2(ctx, {
             seed: 7,
@@ -693,9 +729,8 @@ describe("frame loop on the GPU ForceAtlas2 simulation (spec 7.19; 11.4 last bul
     it("a setPosition during flight lands in the following batch and is never overwritten by an older one", async (t) => {
         requireGpu(t);
         const ctx = await acquire();
-        const { snapshot } = fixture("random1k", gpuScale());
+        const { snapshot, k } = await calibrateFlight(ctx, gpuScale(), await measureTickMs());
         const n = snapshot.nodeCount;
-        const k = await calibrateHeavyStep(ctx, snapshot, await measureTickMs());
         const positions = new Float32Array(3 * n).fill(NaN);
         const sim = createForceAtlas2(ctx, {
             seed: 7,
@@ -765,9 +800,8 @@ describe("frame loop on the GPU ForceAtlas2 simulation (spec 7.19; 11.4 last bul
     it("pause: exactly the in-flight batches land, flush() resolves, no submission for 100 ticks, a later step() continues", async (t) => {
         requireGpu(t);
         const ctx = await acquire();
-        const { snapshot } = fixture("random1k", gpuScale());
+        const { snapshot, k } = await calibrateFlight(ctx, gpuScale(), await measureTickMs());
         const n = snapshot.nodeCount;
-        const k = await calibrateHeavyStep(ctx, snapshot, await measureTickMs());
         const options = {
             seed: 7,
             maxIter: 1_000_000,
