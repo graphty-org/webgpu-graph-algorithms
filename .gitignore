@@ -14,3 +14,7 @@ gpu-report.json
 # The review probe logs are committed on purpose (contract 1.1: docs/research/review/probes/*.log).
 !packages/webgpu-graph-algorithms/docs/research/review/probes/*.log
 .DS_Store
+# The archive of past Claude Code sessions, synced by claude-history-sync.sh (see CLAUDE.md).
+.claudehistory/
+# Playwright MCP snapshots and console logs written next to the page under test.
+.playwright-mcp/
