@@ -171,7 +171,16 @@ describe("CommandBatch in the browser (spec 5.8, 5.7)", () => {
                 console.warn(
                     `[browser/batch] bad bind group on ${browserGpu()} delivered through ${path}: ${delivered.message}`,
                 );
-                // delivered once: nothing pending, the context is usable
+                // Chromium reports the bad bind group twice: the usage mismatch at createBindGroup and, as a separate
+                // event, the command buffer it invalidated at Queue.submit. Both usually arrive before the map resolves
+                // and are chained behind the first (PendingErrorSlot); on the Metal runner the second sometimes lands
+                // after the batch took the slot, and then it is what the context's next public call throws (spec 5.7,
+                // browsers) -- so nothing OR that consequence may be pending here, never an unrelated error
+                const late = ctx.takePendingError();
+                if (late !== null) {
+                    expect(late.code).toBe("E_VALIDATION");
+                    expect(String(late.details.message)).toContain(`batch/bad#${submitted.id}`);
+                }
                 expect(ctx.takePendingError()).toBeNull();
                 expect(() => {
                     ctx.assertReady();
