@@ -293,3 +293,99 @@ describe("dist (spec 2.5; hard failure under CI, skip locally)", () => {
         expect(thrown).toBeInstanceOf(WebGpuGraphErrorClass);
     });
 });
+
+// ============================================================ P1-T7: the bundle specifier assertions (spec 2.5 mechanism 1)
+
+/** One `webgpu` specifier found in a bundle: where and in which import form. */
+interface WebgpuSpecifier {
+    readonly file: string;
+    readonly form: "static" | "dynamic" | "require";
+    readonly text: string;
+}
+
+/**
+ * Every specifier naming the webgpu module in a bundle, in the four forms spec 2.5 lists (static `from "webgpu"`, a bare
+ * side-effect `import "webgpu"`, dynamic `import("webgpu")`, `require("webgpu")`), both quote styles. The word itself also
+ * appears in the package name, in kind: "webgpu" and in E_NO_WEBGPU, so this is a specifier match, not a substring match.
+ * @param file - the bundle path relative to the package root
+ * @param code - its text
+ * @returns the specifiers found
+ */
+function webgpuSpecifiers(file: string, code: string): WebgpuSpecifier[] {
+    const found: WebgpuSpecifier[] = [];
+    const forms: readonly [WebgpuSpecifier["form"], RegExp][] = [
+        ["static", /\bfrom\s*(["'])webgpu\1/g],
+        ["static", /\bimport\s*(["'])webgpu\1/g],
+        ["dynamic", /\bimport\s*\(\s*(["'])webgpu\1\s*\)/g],
+        ["require", /\brequire\s*\(\s*(["'])webgpu\1\s*\)/g],
+    ];
+    for (const [form, pattern] of forms) {
+        for (const match of code.matchAll(pattern)) {
+            found.push({ file, form, text: match[0] });
+        }
+    }
+    return found;
+}
+
+/**
+ * The relative modules a bundle imports (vite's dist/chunks/*.js), transitively, so a specifier hidden in a shared chunk
+ * is found too.
+ * @param entry - a bundle path relative to the package root
+ * @returns every file of the closure, the entry first
+ */
+function bundleClosure(entry: string): string[] {
+    const seen: string[] = [];
+    const pending = [entry];
+    while (pending.length > 0) {
+        const file = pending.pop();
+        if (file === undefined || seen.includes(file)) {
+            continue;
+        }
+        seen.push(file);
+        const code = readFileSync(resolve(file), "utf-8");
+        for (const match of code.matchAll(/\bfrom\s*(["'])(\.\.?\/[^"']+)\1/g)) {
+            const target = match[2];
+            if (target !== undefined) {
+                pending.push(`${file.slice(0, file.lastIndexOf("/") + 1)}${target}`);
+            }
+        }
+    }
+    return seen;
+}
+
+describe("bundle specifiers (spec 2.5 mechanism 1; contract 5.5)", () => {
+    const BUNDLES = ["./dist/webgpu-graph-algorithms.js", "./dist/browser.js", "./dist/node.js"];
+    const bundlePresent = BUNDLES.every((file) => existsSync(resolve(file)));
+
+    it("the bundle exists under CI (every lane builds with pnpm run build = build:all; hard-fail, never skip)", () => {
+        if (underCi) {
+            expect(bundlePresent, `dist bundle absent under CI: ${BUNDLES.join(", ")} -- run pnpm run build:all`).toBe(
+                true,
+            );
+        } else {
+            expect(typeof bundlePresent).toBe("boolean"); // locally the two assertions below skip without the bundle
+        }
+    });
+
+    it.skipIf(!bundlePresent)(
+        "the root and browser bundles (and their chunks) carry no webgpu specifier of any form",
+        () => {
+            for (const entry of ["./dist/webgpu-graph-algorithms.js", "./dist/browser.js"]) {
+                const closure = bundleClosure(entry);
+                expect(closure.length, `${entry} resolves to at least itself`).toBeGreaterThan(0);
+                for (const file of closure) {
+                    expect(webgpuSpecifiers(file, readFileSync(resolve(file), "utf-8")), file).toEqual([]);
+                }
+            }
+        },
+    );
+
+    it.skipIf(!bundlePresent)("the node bundle names webgpu only inside a dynamic import()", () => {
+        const found = bundleClosure("./dist/node.js").flatMap((file) =>
+            webgpuSpecifiers(file, readFileSync(resolve(file), "utf-8")),
+        );
+        expect(found.length, "src/node/index.ts imports webgpu dynamically (3.7)").toBeGreaterThan(0);
+        expect(found.filter((f) => f.form !== "dynamic")).toEqual([]);
+        expect(found.every((f) => f.file === "./dist/node.js")).toBe(true);
+    });
+});

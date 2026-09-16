@@ -1,0 +1,7 @@
+{
+    "kernel": "fa2-speed-finalize",
+    "fixture": "karate",
+    "adapterClass": "nvidia-lovelace-browser",
+    "dtype": "f32",
+    "values": [366257.03125, 183128.515625, 1.5, 1.2999999523162842]
+}

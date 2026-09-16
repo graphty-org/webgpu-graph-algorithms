@@ -1,0 +1,7 @@
+{
+    "kernel": "fill",
+    "fixture": "linear-id",
+    "adapterClass": "google-swiftshader-browser",
+    "dtype": "u32",
+    "values": [877493955, 1000003, 1000004, 1000258, 1000259, 17776962, 17776963, 17776963]
+}
