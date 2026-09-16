@@ -1,9 +1,12 @@
 # .github/workflows/gpu.yml -- GPU lane, never required, never a job of CI
 name: GPU
 on:
-    push: { branches: [master] }
+    # push and the nightly schedule are OFF until the hosted gpu-linux-t4 runner exists (spec 12.4, an owner item):
+    # a job whose runner does not exist queues for 24 h and is then cancelled, on every push. Restore both lines
+    # (spec 12.3) when the runner is registered:
+    #   push: { branches: [master] }
+    #   schedule: [{ cron: "17 6 * * *" }]          # nightly
     pull_request: { types: [labeled, synchronize] }
-    schedule: [{ cron: "17 6 * * *" }]          # nightly
     workflow_dispatch:
 permissions: { contents: read }
 concurrency:
