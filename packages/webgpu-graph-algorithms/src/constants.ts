@@ -19,8 +19,17 @@ export const ARC_WINDOW_ALIGN = 64;
 export const STORAGE_ALIGN = 256;
 /** Stride of one UniformRing slot: minUniformBufferOffsetAlignment is 256 on every runtime the package targets (spec 5.3). */
 export const UNIFORM_SLOT_BYTES = 256;
-/** Exact-tier crossover default: CONSERVATIVE until G3 re-fixes it by the 7.8 rule (spec Q-6; the measured 7.6 curve predicts 32,768). */
-export const EXACT_MAX_NODES = 16384;
+/**
+ * Exact-tier crossover default, re-fixed at G3 by the spec 7.8 rule (spec Q-6; docs/decisions/G3.md section 3): the
+ * largest rung of the T-4 ladder (1k / 4k / 8k / 16k / 32k / 65k, E = 10n, 2D) with <= 4 ms per iteration, rounded down
+ * to a power of two. Measured on the RTX 4070 SUPER under Dawn-node: benchmarks/results/nvidia-lovelace-driver580.json,
+ * session 2026-09-16T02:07:45.933Z, the "ms/iteration (profiler)" rows (the GPU time of the iteration's passes at the
+ * card's working clock; the step(1) wall rows beside them include the 12n readback): 2.560 ms at 32k, 8.405 ms at 65k.
+ * The rule's second clause -- not slower than the grid tier at the same n -- has no grid tier to compare with in P3 and
+ * is re-checked at G4 (spec 7.8). A consumer whose GPU differs (integrated, Apple, T4) passes its own value through
+ * createAccelerator(ctx, { layout: { exactMaxNodes } }); P4's calibrateLayout(ctx) measures it.
+ */
+export const EXACT_MAX_NODES = 32768;
 /** Default number of MAP_READ staging buffers in the Readback ring (spec 4.4). */
 export const DEFAULT_STAGING_SLOTS = 3;
 /** Timestamp query-set size of the Profiler (spec 5.5: "a query set of 256 slots"; 2 slots per pass). */

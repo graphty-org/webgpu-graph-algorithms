@@ -121,7 +121,11 @@ describe("constants.ts (contract 3.2)", () => {
     });
 
     it("pins the memory and kernel-infrastructure constants", () => {
-        expect(EXACT_MAX_NODES).toBe(16384);
+        // re-fixed at G3 by the spec 7.8 rule (docs/decisions/G3.md section 3): a ladder rung, so a power of two in [1024, 65536]
+        expect(EXACT_MAX_NODES).toBe(32768);
+        expect(EXACT_MAX_NODES).toBeGreaterThanOrEqual(1024);
+        expect(EXACT_MAX_NODES).toBeLessThanOrEqual(65536);
+        expect(Math.log2(EXACT_MAX_NODES) % 1).toBe(0);
         expect(DEFAULT_STAGING_SLOTS).toBe(3);
         expect(PROFILER_QUERY_SLOTS).toBe(256);
         expect(OOM_SCOPE_THRESHOLD_BYTES).toBe(16777216);
@@ -158,7 +162,7 @@ describe("constants.ts (contract 3.2)", () => {
         expect(Object.isFrozen(FA2_DEFAULTS)).toBe(true);
         expect(LAYOUT_TUNING_DEFAULTS).toEqual({
             repulsion: "auto",
-            exactMaxNodes: 16384,
+            exactMaxNodes: 32768,
             nearMax: 64,
             deterministic: true,
             gridMax2D: 512,
