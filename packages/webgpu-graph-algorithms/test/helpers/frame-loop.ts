@@ -283,3 +283,35 @@ export async function runFrameLoop(
         submissionsDuringPause,
     };
 }
+
+/**
+ * The 600-tick run of spec 11.4 on an adapter that may need more ticks than that. The run's 100-iteration budget
+ * in 4-iteration batches is 25 landings: a hardware adapter or SwiftShader fits them into a few hundred ticks, a
+ * software rasterizer with a long per-submit latency may not (WARP on the windows-latest runner lands a batch
+ * every 20-30 ticks). Runs `runFrameLoop` with the caller's options and, while the loop has not reported the
+ * settle (and no round recorded an error), again in further rounds of the same length up to `maxRounds`, with
+ * one awaited flush() between rounds so every round counts submissions from a clean slate (a coalesced call
+ * returns a promise the previous round already handled, which a fresh round would count as a new submission).
+ * Every round's report is returned: the first is the spec's run, the last carries the settle when the loop
+ * observed it at all, and the submissions of all rounds sum to the batches the simulation ran.
+ * @param sim - the simulation under test
+ * @param positions - the owner's stride-3 scene array
+ * @param options - the options of every round
+ * @param maxRounds - the ceiling on rounds (default 10)
+ * @returns the reports, in order
+ */
+export async function runFrameLoopUntilSettled(
+    sim: GpuLayoutSimulation<ForceAtlas2Options, ForceAtlas2Stats>,
+    positions: F32,
+    options: FrameLoopOptions,
+    maxRounds = 10,
+): Promise<readonly FrameLoopReport[]> {
+    const reports: FrameLoopReport[] = [await runFrameLoop(sim, positions, options)];
+    let last = reports[0];
+    while (last.settledAtTick === null && last.errors.length === 0 && reports.length < maxRounds) {
+        await sim.flush();
+        last = await runFrameLoop(sim, positions, options);
+        reports.push(last);
+    }
+    return reports;
+}

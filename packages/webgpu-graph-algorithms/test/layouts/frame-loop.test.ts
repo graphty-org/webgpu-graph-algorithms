@@ -22,7 +22,12 @@ import { type GpuContext } from "../../src/context.js";
 import { createForceAtlas2 } from "../../src/layouts/forceatlas2.js";
 import { type ForceAtlas2Stats, type GpuLayoutSimulation, type RunOptions } from "../../src/types/layout.js";
 import { type ForceAtlas2Options } from "../../src/types/options.js";
-import { type FrameLoopOptions, type FrameLoopReport, runFrameLoop } from "../helpers/frame-loop.js";
+import {
+    type FrameLoopOptions,
+    type FrameLoopReport,
+    runFrameLoop,
+    runFrameLoopUntilSettled,
+} from "../helpers/frame-loop.js";
 import { fixture } from "../helpers/graphs.js";
 import { acquire, gpuScale, requireGpu } from "../setup/gpu.js";
 
@@ -354,6 +359,49 @@ describe("runFrameLoop: the element's bridge logic on a scripted simulation (spe
         expect(String(report.errors[0])).toMatch(/pause never started/);
     });
 
+    it("F: runFrameLoopUntilSettled runs further rounds until a round reports the settle, one flush between rounds, and stops at maxRounds", async () => {
+        // a fake whose flush() plays the GPU for everything in flight (the real flush resolves once the batches landed)
+        class FlushLandsFake extends FakeSimulation {
+            override flush(): Promise<void> {
+                while (this.inFlight > 0) {
+                    this.land();
+                }
+                return Promise.resolve();
+            }
+        }
+        const roundOptions: FrameLoopOptions = {
+            ticks: 4,
+            iterationsPerStep: 1,
+            maxInFlight: 1,
+            onTick: (tick) => {
+                if (tick === 2) {
+                    fake.land();
+                }
+            },
+        };
+        let fake = new FlushLandsFake(4, 1, 3, true);
+        const rounds = await runFrameLoopUntilSettled(fake, fake.positions, roundOptions);
+        // round 1: t0 submit b1 | t1 coalesce | t2 b1 lands (done 1), submit b2 | t3 coalesce -> not settled, b2 in flight
+        // flush lands b2 (done 2)
+        // round 2: t0 submit b3 | t1 coalesce | t2 b3 lands (done 3 = maxIter: settled; the step() resolves at once and
+        // is no submission) | t3 starts settled -> settledAtTick 3
+        expect(rounds).toHaveLength(2);
+        expect(rounds[0].submissions).toBe(2);
+        expect(rounds[0].settledAtTick).toBeNull();
+        expect(rounds[0].iterationsDoneByTick).toEqual([0, 0, 0, 1]);
+        expect(rounds[1].submissions).toBe(1);
+        expect(rounds[1].settledAtTick).toBe(3);
+        expect(rounds[1].iterationsDoneByTick).toEqual([2, 2, 2, 3]);
+        expect(rounds.every((report) => report.errors.length === 0)).toBe(true);
+        expect(fake.iterationsDone).toBe(rounds[0].submissions + rounds[1].submissions); // one iteration per batch
+        // the cap: one round only, the settle unobserved, nothing flushed
+        fake = new FlushLandsFake(4, 1, 3, true);
+        const capped = await runFrameLoopUntilSettled(fake, fake.positions, roundOptions, 1);
+        expect(capped).toHaveLength(1);
+        expect(capped[0].settledAtTick).toBeNull();
+        expect(fake.inFlight).toBe(1);
+    });
+
     it("rejects a simulation without the ForceSimulation counters", async () => {
         const bare = { step: () => Promise.resolve() } as unknown as GpuLayoutSimulation<
             ForceAtlas2Options,
@@ -603,22 +651,30 @@ describe("frame loop on the GPU ForceAtlas2 simulation (spec 7.19; 11.4 last bul
         const seeded = Float32Array.from(positions);
         expect(seeded.every((v) => Number.isFinite(v))).toBe(true); // load() seeded the NaN rows in place (3.13)
         const loopOptions: FrameLoopOptions = { ticks: 600, iterationsPerStep: 4, maxInFlight: 2 };
-        const report: FrameLoopReport = await runFrameLoop(sim, positions, loopOptions);
-        expect(report.errors).toEqual([]);
-        expect(report.submissions).toBeGreaterThanOrEqual(1);
-        expect(report.submissions).toBeLessThanOrEqual(600);
-        expect(report.maxObservedInFlight).toBeLessThanOrEqual(2);
-        expect(report.iterationsDoneByTick).toHaveLength(600);
-        expectMonotone(report.iterationsDoneByTick);
-        expect(report.settledAtTick).not.toBeNull();
-        expect(report.positionHolds).toEqual([]);
-        expect(report.submissionsDuringPause).toBe(0);
+        // the spec's 600 ticks, and further rounds of 600 on an adapter whose batches outlast the budget (WARP)
+        const rounds: readonly FrameLoopReport[] = await runFrameLoopUntilSettled(sim, positions, loopOptions);
+        expect(rounds[0].submissions).toBeGreaterThanOrEqual(1);
+        for (const report of rounds) {
+            expect(report.errors).toEqual([]);
+            expect(report.submissions).toBeLessThanOrEqual(600);
+            expect(report.maxObservedInFlight).toBeLessThanOrEqual(2);
+            expect(report.iterationsDoneByTick).toHaveLength(600);
+            expectMonotone(report.iterationsDoneByTick);
+            expect(report.positionHolds).toEqual([]);
+            expect(report.submissionsDuringPause).toBe(0);
+        }
+        const last = rounds[rounds.length - 1];
+        expect(last.settledAtTick, `settled within ${rounds.length} rounds of 600 ticks`).not.toBeNull();
+        if (rounds.length > 1) {
+            console.warn(`[frame-loop] the settle took ${rounds.length} rounds of 600 ticks on this adapter`);
+        }
         await sim.flush();
         expect(sim.inFlight).toBe(0);
         expect(sim.settled).toBe(true);
         // every submitted batch landed and carried 4 iterations; at most the one batch already in flight when the
         // budget was reached overshoots maxIter (7.19: the element's calls are throttled, not clairvoyant)
-        expect(sim.iterationsDone).toBe(report.submissions * 4);
+        const submissions = rounds.reduce((sum, report) => sum + report.submissions, 0);
+        expect(sim.iterationsDone).toBe(submissions * 4);
         expect(sim.iterationsDone).toBeLessThanOrEqual(104);
         let moved = 0;
         for (let i = 0; i < n; i++) {
