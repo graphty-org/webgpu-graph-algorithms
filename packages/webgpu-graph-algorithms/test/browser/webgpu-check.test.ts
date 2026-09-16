@@ -70,7 +70,7 @@ async function grantedAdapter(): Promise<GPUAdapter> {
 
 describe("browser: WebGPU check (spec 13 row P0; contract 5.5)", () => {
     it("receives GRAPHTY_GPU_REQUIRE, GRAPHTY_BROWSER_GPU and GRAPHTY_NOISE_FLOOR_WRITE through import.meta.env", () => {
-        expect(["nvidia", "swiftshader"]).toContain(import.meta.env.GRAPHTY_BROWSER_GPU);
+        expect(["nvidia", "swiftshader", "metal"]).toContain(import.meta.env.GRAPHTY_BROWSER_GPU);
         expect(typeof import.meta.env.GRAPHTY_GPU_REQUIRE).toBe("string");
         expect(typeof import.meta.env.GRAPHTY_NOISE_FLOOR_WRITE).toBe("string");
         expect(browserPolicy().raw).toBe(import.meta.env.GRAPHTY_GPU_REQUIRE);
@@ -98,10 +98,12 @@ describe("browser: WebGPU check (spec 13 row P0; contract 5.5)", () => {
         );
         // Chromium reports isFallbackAdapter as a boolean (so does Dawn-node 0.4.0; contract correction 5)
         expect(typeof info.isFallbackAdapter).toBe("boolean");
-        expect(
-            browserGpu(),
-            "the flag set vitest.config.ts selected (GRAPHTY_BROWSER_GPU) must match the adapter Chromium granted: an NVIDIA flag set that yields SwiftShader means the driver did not initialise (dev box: LD_LIBRARY_PATH or GRAPHTY_EGL_LIB_DIR, spec 12.2; docs/HEADLESS_GPU_REPORT.md)",
-        ).toBe(software ? "swiftshader" : "nvidia");
+        if (browserGpu() !== "metal") {
+            expect(
+                browserGpu(),
+                "the flag set vitest.config.ts selected (GRAPHTY_BROWSER_GPU) must match the adapter Chromium granted: an NVIDIA flag set that yields SwiftShader means the driver did not initialise (dev box: LD_LIBRARY_PATH or GRAPHTY_EGL_LIB_DIR, spec 12.2; docs/HEADLESS_GPU_REPORT.md)",
+            ).toBe(software ? "swiftshader" : "nvidia");
+        }
         const policy = browserPolicy();
         if (policy.level === "vendor") {
             expect(info.vendor).toBe(policy.vendor);

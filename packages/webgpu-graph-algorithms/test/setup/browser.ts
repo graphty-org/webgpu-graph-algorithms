@@ -12,6 +12,7 @@ import { afterAll, afterEach, type TestContext } from "vitest";
 import { checkAdapter, type GpuPolicy, parseGpuRequire } from "../../scripts/gpu-policy.js";
 import { type BrowserGpuOptions, requestGpuContext } from "../../src/browser/index.js";
 import type { GpuContext } from "../../src/context.js";
+import { isSoftwareAdapter } from "../../src/device/acquire.js";
 import type { WebGpuGraphError } from "../../src/errors.js";
 
 const contexts: GpuContext[] = [];
@@ -28,9 +29,22 @@ export function browserGpu(): "nvidia" | "swiftshader" | "metal" {
     return value === "nvidia" || value === "metal" ? value : "swiftshader";
 }
 
-/** Whether the launched adapter is expected to be a software one (only the SwiftShader flag set is). */
-export function browserExpectsSoftware(): boolean {
-    return browserGpu() === "swiftshader";
+/**
+ * What the flag set promises about the adapter: "swiftshader" must yield a software adapter, "nvidia" a hardware
+ * one, and "metal" (the host lane) whatever the runner grants -- a Metal device when headless Chromium reaches it,
+ * SwiftShader when the VM's GPU is blocklisted -- so it is unconstrained (null) and the tests record what they got.
+ */
+export function browserExpectsSoftware(): boolean | null {
+    const gpu = browserGpu();
+    return gpu === "metal" ? null : gpu === "swiftshader";
+}
+
+/** The adapter requireBrowserGpu() last saw (its info), for the flag-set-agnostic checks. */
+let grantedInfo: GPUAdapterInfo | null = null;
+
+/** Whether the adapter requireBrowserGpu() granted is a software one (false until a test has called it). */
+export function browserGrantedSoftware(): boolean {
+    return grantedInfo !== null && isSoftwareAdapter(grantedInfo);
 }
 
 /** navigator.gpu or undefined (never throws). */
@@ -57,6 +71,7 @@ export async function requireBrowserGpu(t: TestContext): Promise<void> {
             absent = "requestAdapter() returned null";
         } else {
             ({ info } = adapter);
+            grantedInfo = info;
         }
     }
     const verdict = checkAdapter(info, policy, { browser: true });
@@ -90,7 +105,8 @@ export async function acquireBrowser(options: BrowserGpuOptions = {}): Promise<G
 
 /** The browser's gpuScale(): 1 on a hardware adapter (nvidia, metal), 1 / 50 on swiftshader. */
 export function browserScale(): number {
-    return browserExpectsSoftware() ? 1 / 50 : 1;
+    const expected = browserExpectsSoftware();
+    return (expected ?? browserGrantedSoftware()) ? 1 / 50 : 1;
 }
 
 afterEach(async () => {

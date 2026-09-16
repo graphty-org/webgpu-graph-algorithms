@@ -21,6 +21,7 @@ import {
     acquireBrowser,
     browserExpectsSoftware,
     browserGpu,
+    browserGrantedSoftware,
     browserScale,
     requireBrowserGpu,
 } from "../setup/browser.js";
@@ -31,7 +32,7 @@ import {
  * @param ctx - the context acquireBrowser handed out
  */
 function expectAdapterMatchesFlagSet(ctx: GpuContext): void {
-    expect(ctx.caps.software).toBe(browserExpectsSoftware());
+    expect(ctx.caps.software).toBe(browserExpectsSoftware() ?? browserGrantedSoftware());
     if (browserGpu() === "nvidia") {
         expect(ctx.caps.vendor).toBe("nvidia");
     }

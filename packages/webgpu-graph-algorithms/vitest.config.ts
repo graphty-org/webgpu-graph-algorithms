@@ -16,9 +16,17 @@ export const BROWSER_FLAGS = Object.freeze({
         "--use-angle=vulkan",
         "--disable-vulkan-surface",
     ]),
-    swiftshader: Object.freeze(["--enable-unsafe-webgpu", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]),
-    // The host lane on macOS (hosts.yml): Chromium picks Dawn's Metal backend by itself; WebKit takes no flags.
-    metal: Object.freeze(["--enable-unsafe-webgpu"]),
+    // --use-webgpu-adapter=swiftshader names the WebGPU adapter explicitly: on the Windows host lane the two ANGLE flags
+    // alone left requestAdapter() null (Chromium 153); on Linux they already yielded SwiftShader and the switch is a no-op.
+    swiftshader: Object.freeze([
+        "--enable-unsafe-webgpu",
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+        "--use-webgpu-adapter=swiftshader",
+    ]),
+    // The host lane on macOS (hosts.yml): Dawn's Metal backend when headless Chromium reaches the VM's device (the
+    // blocklist ignored), SwiftShader otherwise -- the tests accept either under this set; WebKit takes no flags.
+    metal: Object.freeze(["--enable-unsafe-webgpu", "--ignore-gpu-blocklist", "--use-angle=metal"]),
 });
 
 const here = dirname(fileURLToPath(import.meta.url));
