@@ -1,0 +1,8 @@
+# Every text file is committed with LF and checked out with LF on every host (the Windows host lane runs the
+# tests on a checkout; the source-entry test and prettier assume LF). Binary fixtures are marked so, and the
+# graph-io import corpora keep their own line endings (four of them are CRLF on purpose).
+* text=auto eol=lf
+packages/graph-io/test/corpus/** -text
+*.gsnp binary
+*.png binary
+*.zip binary

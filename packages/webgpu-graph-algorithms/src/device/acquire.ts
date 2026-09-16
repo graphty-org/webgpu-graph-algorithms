@@ -82,7 +82,14 @@ function messageOf(err: unknown): string {
  * @returns true for a software adapter
  */
 export function isSoftwareAdapter(info: AdapterInfoLike): boolean {
-    return info.architecture === "software" || info.architecture === "swiftshader" || info.isFallbackAdapter === true;
+    // "software" = Dawn-node on llvmpipe, "swiftshader" = Chromium's fallback, "warp" = Dawn's D3D12 backend on
+    // Microsoft's WARP rasterizer (the Windows host lane: vendor "microsoft", isFallbackAdapter absent under Dawn-node).
+    return (
+        info.architecture === "software" ||
+        info.architecture === "swiftshader" ||
+        info.architecture === "warp" ||
+        info.isFallbackAdapter === true
+    );
 }
 
 /**

@@ -59,7 +59,7 @@ import {
 import { expectBitwiseEqual } from "../helpers/matchers.js";
 import { adapterClass, writeNoiseFixture } from "../helpers/noise-floor.js";
 import { assertCheckPasses, type CheckReport, mergeReports, ratioOf } from "../helpers/sabotage.js";
-import { acquire, gpuScale, requireGpu } from "../setup/gpu.js";
+import { acquire, adapterSummary, gpuScale, requireGpu } from "../setup/gpu.js";
 
 const CASE_TIMEOUT = 300_000;
 /** The free-running twin trace and the number of re-synchronised states. */
@@ -123,11 +123,14 @@ describe("FA2 subgroup twins in-process (spec 11.3)", () => {
         withoutSubgroups = await acquire({ label: "fa2-twins/no-subgroups", subgroups: false });
     });
 
-    it("the two contexts are the two twins: the first exposes subgroups, the second does not", () => {
+    it("the two contexts are the two twins: the first exposes subgroups when the adapter offers them, the second never does", () => {
+        // WARP (the Windows host lane) reports subgroup sizes 4-128 but no "subgroups" feature: both twins are then
+        // the workgroup form and the stage comparisons below degenerate to run-twice checks.
+        const adapterHasSubgroups = adapterSummary()?.features.includes("subgroups") === true;
         expect(
             withSubgroups.caps.features.has("subgroups"),
-            "the feature context has subgroups (lavapipe 8, NVIDIA 32)",
-        ).toBe(!NO_SUBGROUPS_PASS);
+            "the feature context has subgroups iff the adapter offers them (lavapipe 8, NVIDIA 32, WARP none)",
+        ).toBe(!NO_SUBGROUPS_PASS && adapterHasSubgroups);
         expect(withoutSubgroups.caps.features.has("subgroups")).toBe(false);
         expect(adapterClass(withSubgroups.caps)).toBe(adapterClass(withoutSubgroups.caps));
     });

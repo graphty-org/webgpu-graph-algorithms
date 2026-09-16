@@ -100,6 +100,7 @@ describe("isSoftwareInfo (scripts) agrees with isSoftwareAdapter (src) -- the on
     const rows: readonly [string, AdapterInfoLike, boolean][] = [
         ["Dawn-node llvmpipe", { ...base, ...LLVMPIPE }, true],
         ["Chromium SwiftShader", { ...base, ...SWIFTSHADER }, true],
+        ["Dawn-node D3D12 WARP", { ...base, vendor: "microsoft", architecture: "warp" }, true],
         ["an NVIDIA info without the fallback field", { ...base, ...NVIDIA_NODE }, false],
         ["Dawn-node or Chromium NVIDIA (isFallbackAdapter false)", { ...base, ...NVIDIA_CHROMIUM }, false],
         ["a hardware architecture flagged as fallback", { ...base, ...NVIDIA_NODE, isFallbackAdapter: true }, true],

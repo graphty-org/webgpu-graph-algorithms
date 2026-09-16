@@ -40,7 +40,13 @@ export function parseGpuRequire(value) {
  * @returns {boolean} true for a software adapter
  */
 export function isSoftwareInfo(info) {
-    return info.architecture === "software" || info.architecture === "swiftshader" || info.isFallbackAdapter === true;
+    // "warp": Dawn's D3D12 backend on Microsoft's WARP rasterizer (the Windows host lane)
+    return (
+        info.architecture === "software" ||
+        info.architecture === "swiftshader" ||
+        info.architecture === "warp" ||
+        info.isFallbackAdapter === true
+    );
 }
 
 /**

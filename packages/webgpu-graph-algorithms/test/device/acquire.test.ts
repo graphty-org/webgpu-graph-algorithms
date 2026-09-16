@@ -264,6 +264,11 @@ describe("isSoftwareAdapter (spec 2.2 step 2, 2.6)", () => {
             { ...base, vendor: "google", architecture: "swiftshader", isFallbackAdapter: true },
             true,
         ],
+        [
+            "Dawn-node D3D12 WARP (the Windows host lane; no fallback field under Dawn-node)",
+            { ...base, vendor: "microsoft", architecture: "warp", device: "microsoft-basic-render-driver" },
+            true,
+        ],
         ["Dawn-node NVIDIA (isFallbackAdapter false)", { ...base, isFallbackAdapter: false }, false],
         ["Chromium NVIDIA", { ...base, device: "nvidia-geforce-rtx-4070-super", isFallbackAdapter: false }, false],
         ["a fake without the field", base, false],
