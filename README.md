@@ -1,5 +1,7 @@
 # webgpu-graph-algorithms (graphty-org staging)
 
+LANDED: @graphty/webgpu-graph-algorithms, its design and the P0-P3 plans moved to graphty-org/graphty-monorepo on 2026-09-18 with this repository's history (webgpu-graph-algorithms/ and design/webgpu/ there); @graphty/graph-format and @graphty/graph-io moved on 2026-09-16. This repository is archived as the record of the staging.
+
 The public staging repository of graphty-org for packages that move into the graphty monorepo
 (`graphty-org/graphty-monorepo`) once they are done. The repository root is not a package: the pnpm
 workspace root is `packages/`, laid out like the monorepo root so that each package directory moves
